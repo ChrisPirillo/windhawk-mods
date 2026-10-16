@@ -1,0 +1,66 @@
+[
+  {
+    "name": "caption",
+    "source": "inno-native-text-repair/check.cpp"
+  },
+  {
+    "name": "tabs",
+    "source": "tab-paint-owner-repair/check.cpp"
+  },
+  {
+    "name": "settings",
+    "source": "independent-shortcut-repair/check.cpp"
+  },
+  {
+    "name": "fonts",
+    "source": "installer-font-observation-repair/check.cpp"
+  },
+  {
+    "name": "mmcstyle",
+    "source": "mmc-style-ownership-repair/check.cpp"
+  },
+  {
+    "name": "opening-scope",
+    "source": "opening-animation-investigation/check.cpp"
+  },
+  {
+    "name": "opening-timing",
+    "source": "opening-animation-investigation/timing-check.cpp"
+  },
+  {
+    "name": "caption-owner",
+    "source": "caption-color-investigation/check.cpp"
+  },
+  {
+    "name": "picker-chrome",
+    "source": "file-picker-flicker-investigation/chrome-check.cpp"
+  },
+  {
+    "name": "mmc-rebar",
+    "source": "mmc-reliability-investigation/rebar-line-check.cpp"
+  },
+  {
+    "name": "picker-caption",
+    "source": "picker-caption-policy/check.cpp"
+  },
+  {
+    "name": "native-theme",
+    "source": "explorer-label-audit/theme-check.cpp"
+  },
+  {
+    "name": "single-dwm",
+    "source": "single-dwm-dispatcher/check.cpp"
+  },
+  {
+    "name": "xaml-native",
+    "source": "xaml-opening-coverage/check.cpp"
+  },
+  {
+    "name": "xaml-init",
+    "source": "xaml-opening-coverage/registration-check.cpp"
+  },
+  {
+    "name": "address-glyph",
+    "source": "address-glyph-alignment/check.cpp"
+  }
+]

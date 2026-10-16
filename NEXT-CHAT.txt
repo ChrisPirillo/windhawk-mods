@@ -1,0 +1,8 @@
+Continue the Win32 UI Modernizer project from this continuation kit:
+https://github.com/ChrisPirillo/windhawk-mods/blob/codex/continuation-kit/START-HERE.md Read START-HERE.md, STATE.json, TESTING.md and AGENTS.md, then check the current branch and draft PR:
+https://github.com/ChrisPirillo/windhawk-mods/tree/codex/consistent-native-ui
+https://github.com/crazyboyybs/windhawk-mods/pull/2
+
+I do not need the old conversation reconstructed. Work from current source and concrete evidence. Preserve existing working fonts/Properties behavior and native Explorer icon labels. Keep MMC and NVIDIA Control Panel excluded until targeted compatibility fixes are verified. Do not control my mouse/keyboard, restart Explorer or change GPU/device/disk settings. Minimize my manual steps. Separate tests already passed from unfinished visual/runtime acceptance. Keep the public changelog about final behavior and why it matters, not debugging history. No merge or release without my instruction.
+
+My next task is: [describe the specific issue or change here].

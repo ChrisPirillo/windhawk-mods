@@ -1,0 +1,427 @@
+[
+  {
+    "name": ".gitignore",
+    "sha256": "6cf68f361ed9af9c89f8304b81604d87347c3d38348e90f1e5bef55ea8fa99a5",
+    "bytes": 26
+  },
+  {
+    "name": "AGENTS.md",
+    "sha256": "9faa2090b615a3d2906c624d46c0e7c15472606212fa778f7468e1b3667c5aad",
+    "bytes": 2267
+  },
+  {
+    "name": "LICENSE",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "bytes": 35149
+  },
+  {
+    "name": "NEXT-CHAT.txt",
+    "sha256": "950a5777e6ae4fbb4fc96d64485d7c59715bf5d3fa2ea3cdf2b05914776158d5",
+    "bytes": 1049
+  },
+  {
+    "name": "README.md",
+    "sha256": "09acf390c5639ca42906c69a61f89a00363903679fd02505fa49d065751537a0",
+    "bytes": 1828
+  },
+  {
+    "name": "source/win32-ui-modernizer.wh.cpp",
+    "sha256": "0529187018f295a3542f69a9147524f0576d7c5d90a2f675ca970eaecebefd25",
+    "bytes": 3512099
+  },
+  {
+    "name": "START-HERE.md",
+    "sha256": "faa725fd2b75fbfc1fbeb2a79c93a1e7ae714f65d02780799daed8618e1434ca",
+    "bytes": 2493
+  },
+  {
+    "name": "STATE.json",
+    "sha256": "4cd79150faf310822eb79c459bd3562f447afb97c7e85723ed645579bf0907b9",
+    "bytes": 2254
+  },
+  {
+    "name": "TESTING.md",
+    "sha256": "2bb2b4ebfa71b89ffe11869f0115f16f48472f5bf9e692002099b480a5f42bac",
+    "bytes": 3779
+  },
+  {
+    "name": "tests/components/address-glyph-alignment/candidate-policy.inc",
+    "sha256": "e903eb779ed23c723cfeef75e948e2bdd4e21db1b54a9c22361b63b99e11b240",
+    "bytes": 1807
+  },
+  {
+    "name": "tests/components/address-glyph-alignment/check.cpp",
+    "sha256": "9c94638438c4145fbd7ddeeddc5701ae2ef267a5a183a0a4966676c151074eeb",
+    "bytes": 7957
+  },
+  {
+    "name": "tests/components/address-glyph-alignment/controls-v6.manifest",
+    "sha256": "dd6d9124a1f0405d4195b4bfc156d2a3494071324979caf5bea4d209aa30e06e",
+    "bytes": 487
+  },
+  {
+    "name": "tests/components/address-glyph-alignment/rejected-policy.inc",
+    "sha256": "8feb1f28196c7c8287b85bfe6a16353c9652d49174930198d72827ba249fc86d",
+    "bytes": 1285
+  },
+  {
+    "name": "tests/components/caption-color-investigation/caption-owner.inc",
+    "sha256": "3332113b20c589550468ef5f2ffdcee4117c2b405270a29d124a210c94f8713b",
+    "bytes": 8194
+  },
+  {
+    "name": "tests/components/caption-color-investigation/check.cpp",
+    "sha256": "fa8056a974f7049328b34867f640c894394f9b92b676cf6be3f45855af3ba83f",
+    "bytes": 7798
+  },
+  {
+    "name": "tests/components/explorer-label-audit/desktop.inc",
+    "sha256": "d9b340883225ec8c9c5855553c0ed60727b44babcc51a04a9fb4acfcaae1456c",
+    "bytes": 290
+  },
+  {
+    "name": "tests/components/explorer-label-audit/explorer.inc",
+    "sha256": "3a7fa454fbf649c96f5191a7b4a2cbb46b5db2ceefaea76c8be9ca61c78c7467",
+    "bytes": 303
+  },
+  {
+    "name": "tests/components/explorer-label-audit/folder-view.inc",
+    "sha256": "997a870845d184d3ee6f0f8d6a77c4f958cd20e8e9f2dab32f98764726d3c4b8",
+    "bytes": 1219
+  },
+  {
+    "name": "tests/components/explorer-label-audit/theme-cache.inc",
+    "sha256": "0679664f65796b612758217ab58314aa3c8828321f0a6dacf135ff8ef7fd8485",
+    "bytes": 2581
+  },
+  {
+    "name": "tests/components/explorer-label-audit/theme-candidate.inc",
+    "sha256": "be1c4a033c1b60b489f7125c8e6e01920b16b65e3a5485aa23bc02993f00c86e",
+    "bytes": 1948
+  },
+  {
+    "name": "tests/components/explorer-label-audit/theme-check.cpp",
+    "sha256": "0a2cd10eeedee232e3641aaa38c92debdaf4e627c0344963decc792828737789",
+    "bytes": 5320
+  },
+  {
+    "name": "tests/components/file-picker-flicker-investigation/chrome-check.cpp",
+    "sha256": "29f77673752b1ce2695efc1fc278fd203fc3911a79558d41250671945f64b6a7",
+    "bytes": 6696
+  },
+  {
+    "name": "tests/components/file-picker-flicker-investigation/header-paint.inc",
+    "sha256": "2f0e2976ea7bea5c77631b59356ff3c00da4933b35a1d198895e767d051823f1",
+    "bytes": 1301
+  },
+  {
+    "name": "tests/components/file-picker-flicker-investigation/header-scope.inc",
+    "sha256": "fa90c1434efd1ea0a42e980fdd86bec8f411fd4c29d2333adb0885c70ca0c59f",
+    "bytes": 1105
+  },
+  {
+    "name": "tests/components/file-picker-flicker-investigation/native-pixel.inc",
+    "sha256": "9190063f879d4efb04f63d6f5367644ad3b091e6dfa5a74c70812c1abab2018b",
+    "bytes": 1326
+  },
+  {
+    "name": "tests/components/flat-property-rules.inc",
+    "sha256": "afeac07f4b49c92e27f8901d4cd13864a234128517543ddf8799bd7fa3491d48",
+    "bytes": 2686
+  },
+  {
+    "name": "tests/components/flat-static-repair/balance-exact.inc",
+    "sha256": "26bac69d68f4525a85bb3ee2a2bfe9b18731ca27ed35777801be3d60f40c4052",
+    "bytes": 16670
+  },
+  {
+    "name": "tests/components/flat-static-repair/tab-background-exact.inc",
+    "sha256": "d56974752acbace12f536338d382caa3f615a85b53d72f6f9030ce9cc1fe09c0",
+    "bytes": 2002
+  },
+  {
+    "name": "tests/components/folder-location-spacing.inc",
+    "sha256": "4320ce86eadd1f6a7f8b6c369ee9834d24ae3fdb09a3c9c6a6973fb1f8b65007",
+    "bytes": 3890
+  },
+  {
+    "name": "tests/components/independent-shortcut-repair/check.cpp",
+    "sha256": "90a19b2c12cca67eff9bb4601e6e313b422c3f7f4c20777b73ede3ed429a0302",
+    "bytes": 3701
+  },
+  {
+    "name": "tests/components/independent-shortcut-repair/loader.inc",
+    "sha256": "f380fe2cfcb5410f5ab1941afa6a80e5012693c1c5c9382821a875b5112e5c82",
+    "bytes": 17830
+  },
+  {
+    "name": "tests/components/independent-shortcut-repair/settings.inc",
+    "sha256": "da4eb2a7adfc6e5c303525ff207efd23ab35637e7d55c0a5773638940f20036d",
+    "bytes": 5380
+  },
+  {
+    "name": "tests/components/inno-native-text-repair/check.cpp",
+    "sha256": "970a0bd8300398158088fc928fbaa565017b7c3fd0503f29ed3219d7cb08d7e7",
+    "bytes": 6110
+  },
+  {
+    "name": "tests/components/inno-native-text-repair/scope.inc",
+    "sha256": "5c96faf50d691d0c5a18e5757b1e3d1b04c80019c79487142b9ed7e617a7bc6e",
+    "bytes": 3110
+  },
+  {
+    "name": "tests/components/installer-font-observation-repair/check.cpp",
+    "sha256": "122d421f89ea33dd2c80e86150a05c13843e9b4d8fb06de4091bcf6e6191e9d3",
+    "bytes": 8612
+  },
+  {
+    "name": "tests/components/installer-font-observation-repair/engine.inc",
+    "sha256": "36a8273eb35797d7804fdc220a930e0217c0ceb4d2f7ebfe38fec4b6e9ebd81a",
+    "bytes": 2286
+  },
+  {
+    "name": "tests/components/installer-font-observation-repair/interactive.inc",
+    "sha256": "8de02f801e13ad24d4817b8b64401d96309df582cf059ff5f31ba4b0300398dc",
+    "bytes": 494
+  },
+  {
+    "name": "tests/components/installer-font-observation-repair/native-font.inc",
+    "sha256": "e77e5b1328fb0a0cd10afcff139ddf9c27924eb5043caa7390be6e64e9714774",
+    "bytes": 13404
+  },
+  {
+    "name": "tests/components/mmc-reliability-investigation/rebar-candidate.inc",
+    "sha256": "4adea893fa7ad19619d42c88ad23d7f6e20e97181aaeef36b0d7ec4460e51c76",
+    "bytes": 675
+  },
+  {
+    "name": "tests/components/mmc-reliability-investigation/rebar-line-check.cpp",
+    "sha256": "afc4a85f2fe2a21baa09d87ce95a8e3fe99ebdf87956fb8e170907aa538fe318",
+    "bytes": 2714
+  },
+  {
+    "name": "tests/components/mmc-style-ownership-repair/check.cpp",
+    "sha256": "87c71940ed64fe1b32b952131374872a3d78b771643513296536b524bee6cb36",
+    "bytes": 5940
+  },
+  {
+    "name": "tests/components/mmc-style-ownership-repair/ownership.inc",
+    "sha256": "8c48d388acfb6ab3d477ef7e97442133d4f8233fff589cc1f8b6c16b96d5f54b",
+    "bytes": 3342
+  },
+  {
+    "name": "tests/components/module-inspector/inspect.cpp",
+    "sha256": "04d1462b2fadb8e1fed0901e7ec6caefd4b1c1c0c6afd9112bbd246a4472f03c",
+    "bytes": 2089
+  },
+  {
+    "name": "tests/components/native-property-caption.inc",
+    "sha256": "b2bf260560824edc37fcdf80a27fd2b87c79bfee64ec7fad411588d884b4ce33",
+    "bytes": 3973
+  },
+  {
+    "name": "tests/components/native-property-tab-font.inc",
+    "sha256": "dfee5715555e50edb9c60096d932ad99f915a8ffca50c10a36fb490313d93c44",
+    "bytes": 4398
+  },
+  {
+    "name": "tests/components/opening-animation-investigation/candidate.inc",
+    "sha256": "449ba1819b342864f9614ef3aece85c361011ba7a9dda57e12f31f5bd89d39ba",
+    "bytes": 2029
+  },
+  {
+    "name": "tests/components/opening-animation-investigation/check.cpp",
+    "sha256": "29dfe92f9627db643ab1e4bb6c94089d9816d8a9c30a7dcd091bc0648eef6522",
+    "bytes": 6350
+  },
+  {
+    "name": "tests/components/opening-animation-investigation/timing-candidate.inc",
+    "sha256": "5c1fc7af2a6026f74f5b95ffe105cfd97db2714d6f62e2a8c52fc7f46703662d",
+    "bytes": 8627
+  },
+  {
+    "name": "tests/components/opening-animation-investigation/timing-check.cpp",
+    "sha256": "c493b508e2aee3d3850208752f9a3e092e6a85871608235901cf3b4484fe35da",
+    "bytes": 3840
+  },
+  {
+    "name": "tests/components/picker-caption-policy/caption-owner.inc",
+    "sha256": "3332113b20c589550468ef5f2ffdcee4117c2b405270a29d124a210c94f8713b",
+    "bytes": 8194
+  },
+  {
+    "name": "tests/components/picker-caption-policy/check.cpp",
+    "sha256": "1c13790e3b304c746a44066428b6fd035dce86f85a42fb07dbf878cfb568ab56",
+    "bytes": 10975
+  },
+  {
+    "name": "tests/components/picker-caption-policy/picker-policy.inc",
+    "sha256": "5a6a431d47e6f830ca473de131a99613db0ab9d93eb40f7e9fbc002ce0f11b64",
+    "bytes": 1066
+  },
+  {
+    "name": "tests/components/picker-caption-policy/picker-root.inc",
+    "sha256": "b8585a9a25be0254cdf2ce378ef67abd135bfd85ea0ab0d4f435024c4368210c",
+    "bytes": 537
+  },
+  {
+    "name": "tests/components/property-presentation-check.cpp",
+    "sha256": "7df76e71c62822f07c5a8352ab9f97ff60816adda5d3314f45bc6f1031dacc39",
+    "bytes": 19931
+  },
+  {
+    "name": "tests/components/single-dwm-dispatcher/candidate-binding.inc",
+    "sha256": "11186694a2d5cfd867a87036a55d83f70bd52972f651a354a1aec56f82e29604",
+    "bytes": 98
+  },
+  {
+    "name": "tests/components/single-dwm-dispatcher/candidate-caption.inc",
+    "sha256": "3332113b20c589550468ef5f2ffdcee4117c2b405270a29d124a210c94f8713b",
+    "bytes": 8194
+  },
+  {
+    "name": "tests/components/single-dwm-dispatcher/candidate-dispatch.inc",
+    "sha256": "8b0c249fa8fa28c240d7daebf8dc48b452ab2a211b6dd5df08a99267fd0dd8a3",
+    "bytes": 3890
+  },
+  {
+    "name": "tests/components/single-dwm-dispatcher/candidate-opening.inc",
+    "sha256": "b57fa1919c5a2f5bba3adcbe80c74f2ff96f71a214804b41b8361423006df1d8",
+    "bytes": 8649
+  },
+  {
+    "name": "tests/components/single-dwm-dispatcher/candidate-registration.inc",
+    "sha256": "7c6fc6a5de2a7370fa8641412a26e305cdf782c748193827b2cdad388087c312",
+    "bytes": 95
+  },
+  {
+    "name": "tests/components/single-dwm-dispatcher/check.cpp",
+    "sha256": "4ea596ec580a76468d178a5c36fb587a11229233c16841c43c7a91a3a9d26f5e",
+    "bytes": 10249
+  },
+  {
+    "name": "tests/components/tab-paint-owner-repair/check.cpp",
+    "sha256": "9f170397bd04c07bd1cf8c06eccbc1cab3eb65e5c4d2f1ec41506c8ee6e03374",
+    "bytes": 8371
+  },
+  {
+    "name": "tests/components/tab-paint-owner-repair/owner.inc",
+    "sha256": "a84054d883b6dae7fb2f6fccd7139fb59d3268305f08dfb937bf190474e36b2c",
+    "bytes": 7685
+  },
+  {
+    "name": "tests/components/tab-paint-owner-repair/paint-owner.inc",
+    "sha256": "9d7e30ebdac258abbf172ff73afe91f1468d2ed713ea14f9e2c873a3e488745a",
+    "bytes": 928
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/cbt.inc",
+    "sha256": "4c5c4665cfad679c25665569853bb39b66ea2455a96e601e8b4a692b39617556",
+    "bytes": 4625
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/check.cpp",
+    "sha256": "92f68db733274cad6381e6a2fced26d1b3cc6ed25b9d08384f699ddce2f6ac27",
+    "bytes": 9973
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/installer.inc",
+    "sha256": "c5202f1ba169b8e92436a268c4a972f1e7ff9a1ec1754aaf57de6e0dc4aa36b4",
+    "bytes": 2246
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/minimal.inc",
+    "sha256": "3cb1a7e5783db3f64d243a46f5cc4dcc34b7c74ce660e1a9b0ae1744f6e70183",
+    "bytes": 1312
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/opening.inc",
+    "sha256": "c7c648c32f07371c7485b3f5185d9472ae0bacf24dbe617ae0cf45b4c20e6501",
+    "bytes": 8747
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/registration-check.cpp",
+    "sha256": "fd83c771c7d203491fd88e3031248b4be96ab62cbbec028244399b59a8d6d873",
+    "bytes": 2541
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/registration.inc",
+    "sha256": "cca44e69578d14bf7c356cb411a95baef3d57121b8bb11484f764a604e05d8f0",
+    "bytes": 855
+  },
+  {
+    "name": "tests/components/xaml-opening-coverage/wrappers.inc",
+    "sha256": "027e11c5e56e58dadc6e822193898a2a89ea5c8e92b8fdc96e1d280f267f1432",
+    "bytes": 2345
+  },
+  {
+    "name": "tests/manifests/address-glyph-x64/controls-v6.manifest",
+    "sha256": "dd6d9124a1f0405d4195b4bfc156d2a3494071324979caf5bea4d209aa30e06e",
+    "bytes": 487
+  },
+  {
+    "name": "tests/manifests/address-glyph-x64/dwm.exe.manifest",
+    "sha256": "dd6d9124a1f0405d4195b4bfc156d2a3494071324979caf5bea4d209aa30e06e",
+    "bytes": 487
+  },
+  {
+    "name": "tests/manifests/address-glyph-x86/controls-v6.manifest",
+    "sha256": "dd6d9124a1f0405d4195b4bfc156d2a3494071324979caf5bea4d209aa30e06e",
+    "bytes": 487
+  },
+  {
+    "name": "tests/manifests/address-glyph-x86/dwm.exe.manifest",
+    "sha256": "dd6d9124a1f0405d4195b4bfc156d2a3494071324979caf5bea4d209aa30e06e",
+    "bytes": 487
+  },
+  {
+    "name": "tests/manifests/tabs-x64/dwm.exe.manifest",
+    "sha256": "8e013aae21c71c29489dd6209f594ab8fb205d9ce594f672402c79a0494a231c",
+    "bytes": 470
+  },
+  {
+    "name": "tests/manifests/tabs-x86/dwm.exe.manifest",
+    "sha256": "8e013aae21c71c29489dd6209f594ab8fb205d9ce594f672402c79a0494a231c",
+    "bytes": 470
+  },
+  {
+    "name": "tests/matrix.json",
+    "sha256": "8e922cf19b94ae17537daa706be5d9f90df952472df10f96889487722105db29",
+    "bytes": 1517
+  },
+  {
+    "name": "tests/native-fixtures/acl-page-fixture.cpp",
+    "sha256": "29a88ab57b103a5cb2383a6a03f70bc1c64adbb969d938e8248b219da63947b8",
+    "bytes": 6958
+  },
+  {
+    "name": "tests/native-fixtures/font_fixture.cpp",
+    "sha256": "22a275582cdeb460091af9e13cd73fb4ebb18017d67483ffefdac5ba60f1b62f",
+    "bytes": 21075
+  },
+  {
+    "name": "tests/native-fixtures/font_fixture.manifest",
+    "sha256": "8e013aae21c71c29489dd6209f594ab8fb205d9ce594f672402c79a0494a231c",
+    "bytes": 470
+  },
+  {
+    "name": "tests/native-fixtures/font_fixture.rc",
+    "sha256": "c5d119f2bdbb7c3ed63e60097a58e5e2c0b3a1f4935a23dfdd0673a9ab6b2eb9",
+    "bytes": 29
+  },
+  {
+    "name": "tests/native-fixtures/installer-fixture.cpp",
+    "sha256": "75151eab3801e5e567bc218b8023d937964d683dbb1f7b6994edb32490046426",
+    "bytes": 14021
+  },
+  {
+    "name": "tools/project.py",
+    "sha256": "bddf4f2c596367a0920d1a868bcc8a69ec578f3979a87253d55ed8613afc2d7e",
+    "bytes": 6396
+  },
+  {
+    "name": "VERIFICATION.json",
+    "sha256": "28cb77309ee7ebd62ab7e539c9c3d7e0df13a655d015a5590c6637eb6af97b24",
+    "bytes": 570
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-16",
+  "runtime_os": "Windows",
+  "runtime_os_version": "10.0.26340",
+  "python": "3.11.9",
+  "portable_runner_build_cases_passed": 32,
+  "portable_runner_hidden_cases_passed": 32,
+  "component_closure_sha256": "a6193c580a38d690c3536a89f7e044ae081b0862648e3e4ebb15d4429a0599b8",
+  "live_installed_rendering_accepted": false,
+  "cross_machine_execution_tested": false,
+  "scope": "Fresh rebuild and hidden execution using the curated portable source tree. Native fixtures outside default matrix are source references, not executed by this runner."
+}

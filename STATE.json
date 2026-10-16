@@ -1,0 +1,39 @@
+{
+  "as_of": "2026-10-16",
+  "fork": "https://github.com/ChrisPirillo/windhawk-mods",
+  "branch": "codex/consistent-native-ui",
+  "commit": "0a6e775e8e98570b055ee65d573d9dd9a296033f",
+  "author_base": "81f63adc3531a0b15ddccb0fe85934d7f4e4690f",
+  "draft_pr": "https://github.com/crazyboyybs/windhawk-mods/pull/2",
+  "source_sha256": "0529187018f295a3542f69a9147524f0576d7c5d90a2f675ca970eaecebefd25",
+  "proposed_version": "1.0.4.3",
+  "original_author": "crazyboyybs",
+  "default_exclusions": [
+    "dwm.exe",
+    "mmc.exe",
+    "nvcplui.exe"
+  ],
+  "confirmed": [
+    "x64/x86 public DLL compilation",
+    "32 hidden component tests",
+    "Installed native font and DWM-hook checks on both architectures",
+    "Same-window font and ACL-list unload/reload on both architectures",
+    "User-confirmed Properties layout and Regedit Import alignment",
+    "Modern shortcut arrows observed with Explorer styling disabled; 4 replaced lists in live preview",
+    "Computer Management opens after local exclusion format repair"
+  ],
+  "unfinished": [
+    "File-picker Preview-pane flicker",
+    "MMC/NVIDIA theming and remaining borders/gradients; default excluded",
+    "Real Inno license-page and native WixStdBA full-UI acceptance",
+    "Universal/custom-framework opening readiness",
+    "Full theme/contrast/DPI/per-monitor/elevation/accessibility/IME matrix",
+    "Explorer cloud-folder label cause not established"
+  ],
+  "authorization": "Existing draft PR only; no merge or release authorized. Ask the user before publishing further work from a future session.",
+  "test_scope": "Component files are extracted policy snapshots. Refresh affected snapshots against current source after code changes; green tests alone do not certify injected rendering.",
+  "machine_specific_tools_omitted": "Install scripts, elevated launchers, installed DLLs, raw-memory RVAs, UI observers pinned to one local build, private logs/screenshots and credentials are deliberately excluded.",
+  "continuation_kit_branch": "codex/continuation-kit",
+  "continuation_kit_url": "https://github.com/ChrisPirillo/windhawk-mods/blob/codex/continuation-kit/START-HERE.md",
+  "separation": "This kit branch has independent history and does not change the author-review PR branch."
+}
