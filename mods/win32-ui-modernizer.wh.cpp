@@ -8,19 +8,47 @@
 // @description:pt  Moderniza elementos antigos da interface Win32
 // @description:es  Moderniza elementos heredados de la interfaz Win32
 // @description:zh-CN 将旧版 Win32 界面元素全面现代化，使其符合 WinUI 3 / Fluent Design 视觉风格
-// @version         1.0.4
+// @version         1.0.4.3
 // @author          crazyboyybs
 // @github          https://github.com/crazyboyybs
 // @include         *
 // @exclude         dwm.exe
+// @exclude         mmc.exe
+// @exclude         nvcplui.exe
 // @compilerOptions   -ldwmapi -lusp10 -lgdi32 -lcomctl32 -ld2d1 -ldwrite -luxtheme -lwinmm -lmsimg32 -lshcore -lole32 -lshell32 -lshlwapi -luuid -lgdiplus
 // @license         GPL-3.0
 // ==/WindhawkMod==
+// Consistency changes based on upstream 1.0.4, commit 81f63adc3531a0b15ddccb0fe85934d7f4e4690f.
 
 // ==WindhawkModReadme==
 /*
 
 # Win32 UI Modernizer
+
+## Native UI consistency (draft)
+
+This proposal builds on 1.0.4 to make older dialogs easier to read and less visually distracting. It adds an optional consistent font, Flat Properties tabs with stable labels and more room, more consistent dialog backgrounds, and experimental opening controls that keep closing animations enabled. Existing setting keys and tab choices are retained. Version 1.0.4.3 is a proposed version, not an official release.
+
+The font and installer options are under **General** and default off. Fonts use Segoe UI Variable Text with Segoe UI fallback while preserving requested sizes, symbols and monospace text. Installer support covers selected Inno Setup and native WiX controls; it preserves artwork and formatted documents. Real installer coverage is incomplete.
+
+### App exclusions and troubleshooting
+
+Open this mod's **Advanced** tab and edit **Custom process exclusion list** to add executable names or paths, such as `example.exe`. Windhawk applies these exclusions before loading the mod. They use the same mechanism as the mod's default exclusions, so there is no second list with different behavior.
+
+This draft excludes `mmc.exe` (Computer Management, Disk Management and Device Manager) and `nvcplui.exe` (NVIDIA Control Panel) by default. MMC had launch failures during testing, and both applications still have incomplete theming. Exclusion avoids applying this mod to those processes; it does not claim to repair them. The existing `dwm.exe` exclusion is retained.
+
+For deliberate compatibility testing, **Ignore mod inclusion/exclusion lists** lets Windhawk use only your custom lists. Set the custom inclusion list to `*` and keep `dwm.exe` and any other exclusions you still want in the custom exclusion list before enabling that override. Ordinary troubleshooting only requires adding an app to the custom exclusion list.
+
+### What has been checked
+
+Windows x64/x86 builds, native-font checks and same-window font/list unload and reload checks pass. The tester confirmed the Properties layout and the repaired Regedit Import dialog. Modern shortcut arrows can stay enabled while Explorer styling is off; the live preview has four replaced icon lists and the tester confirmed the dark arrows. This does not establish every icon-size or shell-renderer path.
+
+### Still unfinished
+
+Changing the Preview pane in a file picker can still flicker. Opening suppression is experimental and cannot guarantee that every application has finished loading its content. MMC and NVIDIA theming, real installer coverage, and the full light/dark, contrast, scaling, accessibility and elevation matrix remain incomplete. This is a draft for review, not a finished-release claim.
+
+Do not run the separate private preview alongside the published mod. The inherited custom dark mode changes system colors; if colors remain after disabling, reselect your Windows theme as described below.
+
 
 Modernizes legacy Win32 UI elements across all applications to match WinUI 3 / Fluent Design aesthetics.
 
@@ -75,7 +103,7 @@ Modernizes legacy Win32 UI elements across all applications to match WinUI 3 / F
 - **Fluent Icons in the navigation pane**: Replaces nav pane folder icons with multi-color Fluent-style icons, static or animated; independent of the monochrome glyphs above
 - **Modernize shell icons**: Replaces selected legacy shell icons in classic file picker controls with modern adaptive SVG-style icons, and the Windows logo banner in the Alt+F4 "Shut Down Windows" dialog with the accent-colored one
 - **Modern shortcut overlay**: Replaces the shortcut arrow in Explorer, the desktop, and file pickers with a theme-aware accent SVG while leaving other shell icons unchanged
-- **DirectWrite shell text**: Renders folder-view and status-bar text in Explorer, folder-view text in file pickers, and desktop icon labels with Segoe UI Variable Text, preserving DirectUI's native layout and the desktop label shadow
+- **DirectWrite shell text**: Optional rendering for eligible Explorer navigation/status areas and picker text. Explorer item labels and desktop icon labels retain native rendering and layout.
 - **Accent colorize**: Shift system colors and theme bitmaps to accent color
 - **Accent marquee**: Use Windows accent color for drag-selection rectangles
 - **Disk chart accent color**: Recolors the disk usage chart and legend swatches in drive Properties dialogs to the system accent color, with rounded swatch corners
@@ -524,6 +552,35 @@ DirectWrite 是 Windows 的现代文本渲染器。旧版 Win32 界面通常使�
     $name:pt: Ativar modernizacoes gerais
     $name:es: Activar modernizaciones generales
     $name:zh-CN: 启用通用现代样式
+  - RoundedTabPane: winui
+    $name: Property window tabs
+    $name:pt: Abas de propriedades
+    $name:es: Pestanas de propiedades
+    $name:zh-CN: 属性窗口选项卡
+    $description: Choose Native, flat dark pages with heavier labels, or the original WinUI styles with multiple rows or a single scrollable row. Flat styling requires custom dark mode.
+    $description:pt: Mantem as abas nativas, ou usa o estilo WinUI com painel de conteudo elevado e varias linhas ou uma unica linha rolavel.
+    $description:es: Mantiene las pestanas nativas, o usa el estilo WinUI con un panel de contenido elevado y varias filas o una sola fila desplazable.
+    $description:zh-CN: 保留原生选项卡，或使用带高亮内容面板的 WinUI 风格，可选择多行或可滚动的单行。
+    $options:
+    - native: Native (no modernization)
+    - flat: Flat dark pages with one scrollable row
+    - winui: WinUI with multiple rows
+    - winui_single: WinUI with a single scrollable row
+  - DisableWindowOpeningAnimations: FALSE
+    $name: Prepare dialogs; suppress opening animations (experimental)
+    $description: Suppresses supported opening transitions while preserving closing and control animations. In custom dark mode, newly created standard dialogs first paint under zero opacity, then reveal after a brief stable layout; a bounded timeout recovers visibility if readiness is not observed. Later asynchronous repaints and unsupported application windows can still flicker. Takes effect for new windows.
+  - OpeningAnimationScope: dialogs
+    $name: Opening animation coverage
+    $description: Dialogs preserves the existing scoped coverage. All application windows also covers ordinary captioned or resizable top-level frames in programs where the mod loads. It preserves child/control, tooltip and tool-window animations. Application-owned composition animations and later content reflow can still occur. Takes effect for new windows; MMC exclusions still apply.
+    $options:
+    - dialogs: Dialogs and listed programs
+    - application_windows: All ordinary application windows
+  - OpeningAnimationProcesses: ""
+    $name: Additional programs without opening animations
+    $description: Semicolon-separated exact executable names, such as explorer.exe. Applies the opening-animation option to newly created top-level windows in these programs. Does not wait for content readiness or suppress later repaints. Restart matching programs after changing the list.
+  - FlatLegacyBorders: FALSE
+    $name: Blend legacy pane borders (experimental)
+    $description: Blends native GDI pane edges and separator borders into their dark background, including MMC consoles. Preserves native geometry, buttons, scrollbars, focus and selection. Does not enable the general separator renderer in MMC. Requires custom dark mode.
   - EnableDarkMode: FALSE
     $name: Enable custom dark mode
     $name:pt: Ativar modo escuro customizado
@@ -533,6 +590,15 @@ DirectWrite 是 Windows 的现代文本渲染器。旧版 Win32 界面通常使�
     $description:pt: Ativa o modo escuro customizado para controles Win32 (SetSysColors, SetPreferredAppMode, pipeline de texto). Ative manualmente quando quiser modo escuro. Melhorias visuais (botoes com destaque, controles arredondados, acrilico em menus) funcionam independentemente.
     $description:es: Activa el modo oscuro personalizado para controles Win32 (SetSysColors, SetPreferredAppMode, pipeline de texto). Active manualmente cuando desee modo oscuro. Mejoras visuales (botones con acento, controles redondeados, acrilico en menus) funcionan independientemente.
     $description:zh-CN: 为 Win32 控件启用自定义深色模式(涉及 SetSysColors、SetPreferredAppMode 及主题文本管道)。需要深色模式时请手动开启。视觉增强(强调色按钮、圆角控件、菜单亚克力)不受此设置影响。
+  - InstallerUi: FALSE
+    $name: Legacy installer UI (Experimental)
+    $description: Engine adapters for Inno Setup VCL, native WiX WixStdBA and enrolled classic dialogs. Recolors neutral surfaces using native painters; preserves artwork, semantic colors and formatted license documents. Requires custom dark mode. Restart matching programs after changing this setting.
+  - InstallerUiProcesses: msiexec.exe;setup.exe;install.exe;installer.exe;uninstall.exe;un.exe
+    $name: Installer programs
+    $description: Common executable names are prefilled. Semicolon-separated exact names; no wildcards or paths. A generic name matches any program with that name. This list enrolls classic dialogs. Known Inno Setup and native WixStdBA roots are detected independently of filenames. Custom Burn applications still need their own adapters. Add product-specific installer names here. Restart matching programs after changing this list.
+  - ConsistentUIFonts: FALSE
+    $name: Consistent UI fonts (Experimental)
+    $description: Use Segoe UI Variable Text, with Segoe UI fallback, in native property sheets, Registry Editor and supported installer dialogs. Keeps native editing and original font sizes; preserves symbol and monospaced fonts. Also enables the experimental Explorer dialog text renderer. Disable to restore application fonts.
   - CustomAccentColor: ""
     $name: Custom accent color
     $name:pt: Cor de destaque customizada
@@ -580,7 +646,11 @@ DirectWrite 是 Windows 的现代文本渲染器。旧版 Win32 界面通常使�
     $description:zh-CN: 将点状焦点矩形替换为圆角轮廓，或彻底隐藏焦点指示(含按钮)。
     $options:
     - modern: Rounded outline
+    - native: Native subtle focus indication
     - hidden: Hide focus indication
+  - EditBottomLine: FALSE
+    $name: Emphasized field bottom edge
+    $description: Add a stronger bottom stroke to text fields. Leave off for a single uniform field border.
   - ModernScrollbars: TRUE
     $name: Modern scrollbars
     $name:pt: Barras de rolagem modernas
@@ -644,19 +714,6 @@ DirectWrite 是 Windows 的现代文本渲染器。旧版 Win32 界面通常使�
     $description:pt: Raio dos cantos em pixels (antes do DPI) para o destaque de hover.
     $description:es: Radio de esquinas en pixeles (antes del DPI) para el resaltado de hover.
     $description:zh-CN: 悬停高亮的圆角半径(像素，DPI 缩放前)。
-  - RoundedTabPane: winui
-    $name: Property window tabs
-    $name:pt: Abas de propriedades
-    $name:es: Pestanas de propiedades
-    $name:zh-CN: 属性窗口选项卡
-    $description: Keeps native tabs, or uses WinUI styling with an elevated content pane and either multiple rows or a single scrollable row.
-    $description:pt: Mantem as abas nativas, ou usa o estilo WinUI com painel de conteudo elevado e varias linhas ou uma unica linha rolavel.
-    $description:es: Mantiene las pestanas nativas, o usa el estilo WinUI con un panel de contenido elevado y varias filas o una sola fila desplazable.
-    $description:zh-CN: 保留原生选项卡，或使用带高亮内容面板的 WinUI 风格，可选择多行或可滚动的单行。
-    $options:
-    - native: Native (no modernization)
-    - winui: WinUI with multiple rows
-    - winui_single: WinUI with a single scrollable row
   - NormalizeDragDrop: FALSE
     $name: Modern drag and drop
     $name:pt: Arrastar e soltar moderno
@@ -728,11 +785,11 @@ DirectWrite 是 Windows 的现代文本渲染器。旧版 Win32 界面通常使�
     - on: On
     - nobuttons: On, without the view buttons
   - ShellTextDirectWrite: FALSE
-    $name: DirectWrite text in Explorer and on the desktop
+    $name: DirectWrite in Explorer navigation and status areas
     $name:pt: Texto do Explorer e da area de trabalho com DirectWrite
     $name:es: Texto del Explorador y del escritorio con DirectWrite
     $name:zh-CN: 资源管理器与桌面的 DirectWrite 文本
-    $description: Uses smoother, WinUI-style text in File Explorer, Open/Save dialogs and on the desktop, preserving the original layout.
+    $description: Uses smoother text in supported navigation, status, legacy command and file-picker areas. File Explorer item labels and desktop icon labels retain native fonts, alignment, wrapping and spacing.
     $description:pt: Usa texto mais suave, no estilo WinUI, no Explorador de Arquivos, nas janelas Abrir/Salvar e na area de trabalho, preservando o layout original.
     $description:es: Usa texto mas suave, de estilo WinUI, en el Explorador de archivos, los dialogos Abrir/Guardar y el escritorio, conservando el diseno original.
     $description:zh-CN: 在文件资源管理器、打开/保存对话框和桌面中使用 WinUI 风格的平滑文本，同时保留原有布局。
@@ -918,7 +975,7 @@ DirectWrite 是 Windows 的现代文本渲染器。旧版 Win32 界面通常使�
     $name:pt: Sobreposicao moderna de atalho
     $name:es: Superposicion moderna de acceso directo
     $name:zh-CN: 现代快捷方式箭头
-    $description: Replaces the shortcut arrow in Explorer, the desktop, and file pickers with a theme-aware accent SVG. Independent of shell icon modernization and disabled by default to preserve manual shortcut overlay replacements.
+    $description: Replaces the shortcut arrow in Explorer, the desktop, and file pickers with a theme-aware accent SVG. Independent of the Enable Explorer modern style category and shell icon modernization. Disabled by default to preserve manual shortcut overlay replacements. Keeps native icon labels and layout.
     $description:pt: Substitui a seta de atalho no Explorador, na area de trabalho e em seletores de arquivos por um SVG de destaque adaptado ao tema. Independente da modernizacao dos icones do shell e desativado por padrao para preservar substituicoes manuais da seta.
     $description:es: Reemplaza la flecha de acceso directo en el Explorador, el escritorio y los selectores de archivos por un SVG de acento adaptado al tema. Independiente de la modernizacion de iconos del shell y desactivado de forma predeterminada para preservar reemplazos manuales de la flecha.
     $description:zh-CN: 将资源管理器、桌面与文件选择器中的快捷方式箭头替换为随主题变化的强调色 SVG。与 Shell 图标现代化相互独立，默认关闭，以保留手动替换的快捷方式箭头。
@@ -1088,7 +1145,7 @@ __CRT_UUID_DECL(IDCompositionVisual3,0x2775f462,0xb6c1,0x4015,0xb0,0xbe,0xb3,0xe
 #include <usp10.h>
 #include <wincodec.h>
 #include <dwrite_3.h>
-#include <ShellScalingApi.h>
+#include <shellscalingapi.h>
 #include <timeapi.h>
 #include <string>
 #include <math.h>
@@ -1231,13 +1288,22 @@ struct Settings {
     INT      MenuCornerStyle    = 2;  // DWMWCP_ROUND
     INT      MenuHoverRadius    = static_cast<int>(WinUI::ControlCornerRadius); // DIPs
     BOOL     MenuWinUiMetrics   = TRUE;
+    BOOL     ConsistentUIFonts = FALSE;
+    BOOL     DisableWindowOpeningAnimations = FALSE;
     BOOL     RoundedButtons    = TRUE;
     BOOL     EditFocusLine     = TRUE;  // derived from RoundedButtons
+    BOOL     EditBottomLine    = FALSE;
     BOOL     AccentGradients   = FALSE;
     BOOL     ModernSeparators  = TRUE;
     BOOL     RoundedTabPane   = TRUE;
     BOOL     SingleLinePropertyTabs = FALSE;
+    BOOL     FlatPropertyPresentation = FALSE;
+    BOOL     FlatLegacyBorders = FALSE;
+    BOOL     OpeningAnimationProcessTarget = FALSE;
+    BOOL     OpeningAnimationAllApplications = FALSE;
     BOOL     EnableDarkMode     = FALSE;
+    BOOL     InstallerUi        = FALSE;
+    bool     InstallerUiProcessTarget = false; // derived from exact executable names
     COLORREF CustomAccentColor = 0;
     bool     CustomAccentColorSet = false; // #000000 is a valid color
     // Dropdown popups follow ModernContextMenus; corner style comes from the
@@ -2007,6 +2073,8 @@ static constexpr COLORREF ElevatedPaneColor(bool dark)
 static constexpr LPCWSTR kPropertySheetLightPaneSubclassMarker = L"WH_PROP_LIGHTPANE_SUB";
 // Stable legacy key used to mark dialogs handled by the dark-mode subclass.
 static constexpr LPCWSTR kPropertyDialogDarkModeMarker = L"_PropDkApplied";
+static constexpr wchar_t kNativePropertyPrepared[] = L"W32M.PropertyPrepared";
+static constexpr wchar_t kNativeFlatTabOwner[]=L"W32M.NativeFlatTabOwner";
 // A dark dialog that draws TaskDialog panels with plain Win32 controls on
 // them (the Run / Create new task dialog): where its command band starts, in
 // client coordinates plus one, recorded by PaintTaskDialogPanel so the
@@ -2169,6 +2237,8 @@ static bool IsInsidePropSheetPage(HWND hwnd)
     return GetPropW(parent, kPropertyDialogDarkModeMarker) &&
            IsInTabbedPropertyPane(parent);
 }
+
+static COLORREF PropertyPaneDarkShade() { return g_settings.RoundedTabPane ? kElevatedPaneDark : Win32MainDark; }
 
 // Common file picker chrome: the DirectUI toolbar band and the dialog's
 // file-name area take a WinUI SolidBackgroundFillColorBase-like shade
@@ -2384,6 +2454,36 @@ static HWND FilePickerRoot(HWND hwnd)
     return FilePickerChromeEnabled() ? FilePickerDialogRoot(hwnd) : nullptr;
 }
 
+// Only the common picker's native navigation/address/search band. The shell
+// view host and namespace tree are never chrome, even if a future template
+// nests them below a WorkerW or ReBarWindow32.
+static HWND FilePickerHeaderChromeRoot(HWND hwnd)
+{
+    if (!g_darkModeActive || !hwnd)
+        return nullptr;
+    HWND root = FilePickerRoot(hwnd);
+    if (!root)
+        return nullptr;
+    HWND viewHost = FindWindowExW(root, nullptr, L"DUIViewWndClassName", nullptr);
+    RECT view{};
+    if (!viewHost || !GetWindowRect(viewHost, &view))
+        return nullptr;
+    HWND band = nullptr;
+    for (HWND w = hwnd; w && w != root; w = GetParent(w)) {
+        if (IsClassName(w, L"DUIViewWndClassName") ||
+            IsClassName(w, L"SHELLDLL_DefView") ||
+            IsClassName(w, L"NamespaceTreeControl"))
+            return nullptr;
+        if (IsClassName(w, L"ReBarWindow32") || IsClassName(w, L"WorkerW"))
+            band = w;
+    }
+    RECT top{};
+    if (!band || !GetWindowRect(band, &top) || top.bottom <= top.top ||
+        top.bottom > view.top)
+        return nullptr;
+    return root;
+}
+
 static bool IsInsideShellFolderView(HWND hwnd);
 
 // A window of the picker's file list (SHELLDLL_DefView subtree): the list's
@@ -2468,6 +2568,7 @@ static HWND FilePickerChromeRoot(HWND hwnd)
 // window begins below the actual SHELLDLL_DefView in screen coordinates.
 static HWND FilePickerChromeBackgroundRoot(HWND hwnd)
 {
+    if (HWND header = FilePickerHeaderChromeRoot(hwnd)) return header;
     HWND root = FilePickerRoot(hwnd);
     if (!root)
         return nullptr;
@@ -2519,7 +2620,7 @@ static COLORREF DarkBgForPaint(HWND hwnd)
 {
     if (IsInsideExcludedFilePicker(hwnd)) return kNativeExcludedPickerDarkBg;
     if (FilePickerChromeBackgroundRoot(hwnd)) return FilePickerControlBackground(true);
-    if (IsInsidePropSheetPage(hwnd)) return kElevatedPaneDark;
+    if (IsInsidePropSheetPage(hwnd)) return PropertyPaneDarkShade();
     // File Explorer's views sit on the native list's shell shade (e.g. the
     // list's ScrollBar windows asking their DirectUI host).
     if (IsCurrentProcessExplorer() && IsInsideShellFolderView(hwnd))
@@ -2919,6 +3020,132 @@ static bool IsCurrentProcessInteractive()
     }
     return cached == 1;
 }
+
+// Explicit executable names prevent an arbitrary setup.exe heuristic from
+// extending UI hooks to an unrelated process.
+static bool InstallerProcessMatches(const wchar_t* process, const wchar_t* targets)
+{
+    if (!process || !targets || !*process)
+        return false;
+    for (const wchar_t* start = targets; *start;) {
+        const wchar_t* end = wcschr(start, L';');
+        if (!end) end = start + wcslen(start);
+        const wchar_t* next = *end ? end + 1 : end;
+        while (start < end && iswspace(*start)) ++start;
+        while (end > start && iswspace(end[-1])) --end;
+        const std::wstring name(start, end);
+        if (name.find_first_of(L"\\/:*?") == std::wstring::npos &&
+            _wcsicmp(name.c_str(), process) == 0)
+            return true;
+        start = next;
+    }
+    return false;
+}
+
+enum class InstallerEngine { None, Classic, Inno, WixStdBA };
+
+static InstallerEngine InstallerRootEngine(LPCWSTR cls)
+{
+    if (!cls) return InstallerEngine::None;
+    if (!_wcsicmp(cls, L"#32770")) return InstallerEngine::Classic;
+    if (!_wcsicmp(cls, L"TWizardForm") || !_wcsicmp(cls, L"TUninstallProgressForm"))
+        return InstallerEngine::Inno;
+    if (!_wcsicmp(cls, L"WixStdBA")) return InstallerEngine::WixStdBA;
+    return InstallerEngine::None;
+}
+
+// Map only verified VCL wrappers of native controls. No substring matching:
+// TRichEditViewer, TBitmapImage and authored custom controls
+// do not become Edit/Static/ListBox merely because their names look similar.
+static LPCWSTR InstallerNativeClass(InstallerEngine engine, LPCWSTR cls)
+{
+    if (engine != InstallerEngine::Inno) return cls;
+    if (!_wcsicmp(cls, L"TNewButton") || !_wcsicmp(cls, L"TNewCheckBox") ||
+        !_wcsicmp(cls, L"TNewRadioButton")) return L"Button";
+    if (!_wcsicmp(cls, L"TNewStaticText")) return L"Static";
+    if (!_wcsicmp(cls, L"TNewEdit") || !_wcsicmp(cls, L"TNewPathEdit") ||
+        !_wcsicmp(cls, L"TPasswordEdit") || !_wcsicmp(cls, L"TNewMemo")) return L"Edit";
+    if (!_wcsicmp(cls, L"TNewListBox")) return L"ListBox";
+    if (!_wcsicmp(cls, L"TNewComboBox")) return L"ComboBox";
+    return cls;
+}
+
+static bool InstallerUiMayInitialize()
+{
+    // Known engines can run from product-specific or temporary .tmp names.
+    return !GetSettings()->InstallerUi || IsCurrentProcessInteractive();
+}
+
+// Typography may use this scope independently of the current color mode.
+static InstallerEngine InstallerWindowEngine(HWND hwnd)
+{
+    const Settings* settings = GetSettings();
+    if (!settings->InstallerUi || !IsCurrentProcessInteractive() || !hwnd)
+        return InstallerEngine::None;
+    HWND root = GetAncestor(hwnd, GA_ROOT);
+    DWORD pid = 0;
+    GetWindowThreadProcessId(root, &pid);
+    wchar_t cls[64] = {};
+    if (pid != GetCurrentProcessId() || !GetClassNameW(root, cls, ARRAYSIZE(cls)))
+        return InstallerEngine::None;
+    const auto engine = InstallerRootEngine(cls);
+    // Unknown/custom Burn BAs are deliberately not inferred from an EXE name.
+    if (engine == InstallerEngine::Classic && !settings->InstallerUiProcessTarget)
+        return InstallerEngine::None;
+    return engine;
+}
+
+static bool InstallerUiRoot(HWND hwnd)
+{
+    return InstallerWindowEngine(hwnd) != InstallerEngine::None;
+}
+
+static bool InstallerNeutralSurface(COLORREF color)
+{
+    const int low = std::min({GetRValue(color), GetGValue(color), GetBValue(color)});
+    const int high = std::max({GetRValue(color), GetGValue(color), GetBValue(color)});
+    return low >= 160 && high - low <= 12;
+}
+
+static bool InstallerSurfaceControl(HWND hwnd)
+{
+    const auto engine = InstallerWindowEngine(hwnd);
+    if (engine == InstallerEngine::None) return false;
+    wchar_t name[64] = {};
+    if (!GetClassNameW(hwnd, name, ARRAYSIZE(name))) return false;
+    LPCWSTR cls = InstallerNativeClass(engine, name);
+    if (InstallerRootEngine(name) == engine) return true;
+    if (engine == InstallerEngine::Inno &&
+        (!_wcsicmp(name, L"TNewNotebook") || !_wcsicmp(name, L"TNewNotebookPage") ||
+         !_wcsicmp(name, L"TPanel") || !_wcsicmp(name, L"TNewCheckListBox") ||
+         !_wcsicmp(name, L"TNewProgressBar"))) return true;
+    const LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+    if (!_wcsicmp(cls, L"Button"))
+        return (style & BS_TYPEMASK) != BS_OWNERDRAW && !(style & (BS_BITMAP | BS_ICON));
+    if (!_wcsicmp(cls, L"Static")) {
+        const auto type = style & SS_TYPEMASK;
+        return type == SS_LEFT || type == SS_CENTER || type == SS_RIGHT ||
+            type == SS_SIMPLE || type == SS_LEFTNOWORDWRAP;
+    }
+    if (!_wcsicmp(cls, L"ListBox"))
+        return !(style & (LBS_OWNERDRAWFIXED | LBS_OWNERDRAWVARIABLE));
+    if (!_wcsicmp(cls, L"ComboBox"))
+        return !(style & (CBS_OWNERDRAWFIXED | CBS_OWNERDRAWVARIABLE));
+    return !_wcsicmp(cls, L"Edit");
+}
+
+static bool InstallerReplaceBrush(HWND hwnd, HBRUSH brush)
+{
+    if (!IsCustomDarkModeAllowed() || !InstallerSurfaceControl(hwnd)) return false;
+    LOGBRUSH lb = {};
+    return brush && GetObject(brush, sizeof(lb), &lb) && lb.lbStyle == BS_SOLID &&
+        InstallerNeutralSurface(lb.lbColor);
+}
+
+// Bracket real engine paint dispatch, including buffered DCs. Unknown child
+// painters clear this TLS slot, so a nested RichEdit/image paint cannot inherit it.
+static thread_local HWND t_installerPaintWindow = nullptr;
+static thread_local HDC t_installerNeutralDC = nullptr;
 
 // MMC support is experimental (see the README F.A.Q) -- fixes for
 // its non-Explorer Toolbar/Rebar chrome are scoped to this process alone,
@@ -8108,6 +8335,7 @@ static COLORREF ExplorerMicaStatusBarTextColor(bool dark)
 
 static COLORREF TravelBandEraseColor(HWND hwndCtx)
 {
+    if (FilePickerHeaderChromeRoot(hwndCtx)) return FilePickerControlBackground(true);
     const bool dark = DarkModeActiveForPaint(hwndCtx);
     if (g_settings.RebarMicaTint && IsSystemTransparencyEnabled())
         return GetExplorerFakeMicaColor(dark);
@@ -8143,6 +8371,7 @@ static const wchar_t GLYPH_DLG_VIEW[]      = L"\uE8A9";
 // file) -- the TravelBand click-pop trigger below needs it, and TravelBand
 // paint runs on a buffered/memory DC (WindowFromDC(cd->hdc) returns nullptr
 // there), so this BeginPaint-hook-set fallback is required, not optional.
+static thread_local bool t_nativePropertyFontUpdate=false;
 thread_local HWND g_tlsPaintHwnd = nullptr; // BeginPaint hook sets this
 // BeginPaint/EndPaint pairs open on this thread; g_tlsPaintHwnd stays set
 // after a paint ends, so it can't tell whether one is running.
@@ -8452,7 +8681,7 @@ static decltype(&FillRect) FillRect_orig = nullptr;
 // DrawThemeParentBackground: that re-enters the parent's erase handler with
 // the child's DC, and this mod's own theme hooks then paint the parent's
 // TABP_PANE into the child.
-static bool IsAppOwnedCtlColorBrush(HBRUSH br);
+static bool IsAppOwnedCtlColorBrush(HBRUSH br, HWND owner);
 static HBRUSH TaskDialogBandCtlColor(HWND dialog, HWND control, HDC hdc);
 
 // The dialog's own WM_CTLCOLORDLG answer when it paints its own
@@ -8469,7 +8698,7 @@ static COLORREF AppOwnedDialogColor(HWND dialog, HDC hdc)
     SetTextColor(hdc, savedText);
     SetBkMode(hdc, savedMode);
     LOGBRUSH lb = {};
-    if (IsAppOwnedCtlColorBrush(br) && GetObject(br, sizeof(lb), &lb) && lb.lbStyle == BS_SOLID)
+    if (IsAppOwnedCtlColorBrush(br, dialog) && GetObject(br, sizeof(lb), &lb) && lb.lbStyle == BS_SOLID)
         return lb.lbColor;
     return CLR_INVALID;
 }
@@ -8482,6 +8711,7 @@ static COLORREF ParentBackgroundColor(HWND hwnd, HDC hdc, bool dark, int sysColo
         const COLORREF own = AppOwnedDialogColor(hwnd ? GetParent(hwnd) : nullptr, hdc);
         if (own != CLR_INVALID)
             return own;
+        if (IsInTabbedPropertyPane(hwnd) && !g_settings.RoundedTabPane) return Win32MainDark;
         return sysColor == COLOR_WINDOW ? kElevatedPaneDark : Win32MainDark;
     }
 
@@ -10276,7 +10506,7 @@ static void NavHoverFadeOutPaint(HWND tv, HTREEITEM hItem, HDC hdc);
 
 static INT GetRestyledComboEditButtonState(HWND hw, HDC hdc);
 static COLORREF RestyledComboFillColor(HWND ctl, HDC hdc, bool dark, INT state);
-static bool IsAppOwnedCtlColorBrush(HBRUSH br);
+static bool IsAppOwnedCtlColorBrush(HBRUSH br, HWND owner);
 static HBRUSH TaskDialogBandCtlColor(HWND dialog, HWND control, HDC hdc);
 
 // From the tree's own paint: the icon cell of the popping item, padded for
@@ -10484,7 +10714,7 @@ static LRESULT WINAPI SendMessageW_hook(HWND hwnd, UINT msg, WPARAM wp, LPARAM l
             // subclass never sees these when this hook answers first.
             if (!g_darkModeExcluded && msg != WM_CTLCOLORLISTBOX) {
                 const LRESULT own = SendMessageW_orig(hwnd, msg, wp, lp);
-                if (IsAppOwnedCtlColorBrush((HBRUSH)own)) {
+                if (IsAppOwnedCtlColorBrush((HBRUSH)own, ctl)) {
                     RememberCtlColorBackground(hdcCtl, ctl, (HBRUSH)own);
                     return own;
                 }
@@ -10501,7 +10731,7 @@ static LRESULT WINAPI SendMessageW_hook(HWND hwnd, UINT msg, WPARAM wp, LPARAM l
             COLORREF bg = (msg == WM_CTLCOLORDLG)
                 ? (IsInsideExcludedFilePicker(ctl) ? kNativeExcludedPickerDarkBg
                    : FilePickerChromeBackgroundRoot(ctl) ? FilePickerControlBackground(true)
-                   : IsInTabbedPropertyPane(ctl) ? kElevatedPaneDark : Win32MainDark)
+                   : IsInTabbedPropertyPane(ctl) ? PropertyPaneDarkShade() : Win32MainDark)
                 : DarkBgForPaint(ctl);
             if (HBRUSH br = GetCachedSolidBrush(bg)) {
                 if (msg == WM_CTLCOLORSTATIC || msg == WM_CTLCOLORBTN ||
@@ -13542,6 +13772,10 @@ static const TabBgCacheEntry* TabBgCacheEnsureWinUI(
 // g_tlsPaintHwnd is declared earlier in the file now (see the "Travel band
 // glyphs" section) -- the TravelBand click-pop trigger needs it before this
 // point. Definition lives there; everything below still just uses it.
+static bool IsInsideExplorer(HWND);
+static bool IsInsideShellFolderView(HWND);
+static bool IsDesktopIconListView(HWND);
+
 static thread_local bool g_glowEntry = false;      // DrawTextWithGlow re-entrancy guard
 static thread_local bool g_inDuiPaintBg = false;    // FillRect hook: intercept white fills during DUI PaintBg
 static thread_local int g_duiPaintElementType = -1;
@@ -13590,6 +13824,326 @@ static LPCWSTR SegoeUiVariableFace()
     }
     return g_segoeVariableFace;
 }
+
+// Native UI font policy. Controls retain native layout, selection and IME.
+static bool InstallerUiRoot(HWND hwnd);
+static constexpr wchar_t kNativeUiFontObserved[] = L"WH_NATIVE_UI_FONT_OBSERVED";
+static constexpr wchar_t kNativeUiFontOriginal[] = L"WH_NATIVE_UI_FONT_ORIGINAL";
+static constexpr wchar_t kNativeUiFontAssigned[] = L"WH_NATIVE_UI_FONT_ASSIGNED";
+static std::atomic<bool> g_nativeUiFontUnloading{false};
+static UINT g_nativeUiFontSyncMessage = 0;
+static std::mutex g_nativeUiFontMutex;
+struct NativeUiFontEntry { LOGFONTW description; HFONT font; };
+static std::vector<NativeUiFontEntry> g_nativeUiFonts;
+
+static bool NativeUiFontEnabled()
+{
+    return g_settings.GeneralSection && g_settings.ConsistentUIFonts &&
+        !g_nativeUiFontUnloading.load(std::memory_order_acquire) &&
+        !g_roundedSelectionHighContrast.load(std::memory_order_acquire) &&
+        !IsTextPipelineDisabled();
+}
+
+static bool NativeUiFontScope(HWND hwnd)
+{
+    if (IsCurrentProcessRegedit())
+        return true;
+    if (InstallerUiRoot(hwnd))
+        return true;
+    HWND root = GetAncestor(hwnd, GA_ROOT);
+    if (!IsClassName(root, L"#32770"))
+        return false;
+    // Advanced and Change Icon are owned dialogs, not property-sheet children.
+    for (unsigned depth = 0; root && depth < 16; ++depth) {
+        DWORD pid = 0;
+        GetWindowThreadProcessId(root, &pid);
+        if (pid != GetCurrentProcessId())
+            return false;
+        if (InstallerUiRoot(root) || (IsClassName(root, L"#32770") &&
+                FindWindowExW(root, nullptr, L"SysTabControl32", nullptr)))
+            return true;
+        root = GetWindow(root, GW_OWNER);
+    }
+    return false;
+}
+
+// The common picker's address-band glyph toolbar owns explicit native
+// button/image metrics. WM_SETFONT itself recomputes those metrics, even
+// when there is no label text, shrinking buttons and moving both glyphs
+// and their hit rectangles. Preserve its original native font contract.
+// Recognize the address-band hierarchy before the later view/tree children
+// complete the common picker identity; breadcrumb text has a different parent.
+static bool NativeUiFontPreserveAddressGlyphToolbar(HWND hwnd)
+{
+    if (!IsClassName(hwnd, L"ToolbarWindow32") ||
+        !IsClassName(GetParent(hwnd), L"msctls_progress32"))
+        return false;
+    HWND root = GetAncestor(hwnd, GA_ROOT);
+    if (!IsClassName(root, L"#32770"))
+        return false;
+    for (HWND parent = GetParent(hwnd); parent && parent != root; parent = GetParent(parent))
+        if (IsClassName(parent, L"ReBarWindow32"))
+            return true;
+    return false;
+}
+
+static bool NativeUiFontControl(HWND hwnd, LPCWSTR cls)
+{
+    if (NativeUiFontPreserveAddressGlyphToolbar(hwnd))
+        return false;
+    cls = InstallerNativeClass(InstallerWindowEngine(hwnd), cls);
+    const LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+    if (!_wcsicmp(cls, L"Static")) {
+        const auto type = style & SS_TYPEMASK;
+        return type == SS_LEFT || type == SS_CENTER || type == SS_RIGHT ||
+            type == SS_SIMPLE || type == SS_LEFTNOWORDWRAP;
+    }
+    if (!_wcsicmp(cls, L"Button"))
+        return !(style & (BS_ICON | BS_BITMAP)) && (style & BS_TYPEMASK) != BS_OWNERDRAW;
+    if (!_wcsicmp(cls, L"ListBox"))
+        return !(style & (LBS_OWNERDRAWFIXED | LBS_OWNERDRAWVARIABLE));
+    if (!_wcsicmp(cls, L"ComboBox"))
+        return !(style & (CBS_OWNERDRAWFIXED | CBS_OWNERDRAWVARIABLE));
+    if (!_wcsicmp(cls, L"SysListView32") && (style & LVS_OWNERDRAWFIXED))
+        return false;
+    constexpr LPCWSTR classes[] = {L"Edit", L"ComboBox", L"ComboLBox", L"SysLink",
+        L"SysListView32", L"SysTreeView32", L"SysHeader32", L"SysTabControl32",
+        L"msctls_hotkey32", L"msctls_statusbar32", L"ToolbarWindow32",
+        L"NativeFontCtl", L"CHECKLIST_ACLUI"};
+    for (const auto* candidate : classes)
+        if (!_wcsicmp(cls, candidate))
+            return true;
+    return false;
+}
+
+static HFONT NativeUiFontResolve(HFONT original)
+{
+    LOGFONTW font = {};
+    if (GetObjectW(original ? original : GetStockObject(DEFAULT_GUI_FONT),
+            sizeof(font), &font) != sizeof(font) ||
+        font.lfCharSet == SYMBOL_CHARSET || font.lfEscapement || font.lfOrientation ||
+        (font.lfPitchAndFamily & 0xF0) == FF_MODERN)
+        return original;
+    // Explicit symbol faces sometimes use DEFAULT_CHARSET.
+    constexpr LPCWSTR symbols[] = {L"Segoe Fluent Icons", L"Segoe MDL2 Assets",
+        L"Segoe UI Symbol", L"Marlett", L"Symbol", L"Wingdings", L"Webdings"};
+    for (const auto* symbol : symbols)
+        if (!_wcsicmp(font.lfFaceName, symbol))
+            return original;
+    static const bool variableAvailable = FontFamilyExists(L"Segoe UI Variable Text");
+    const auto* family = variableAvailable ? L"Segoe UI Variable Text" : L"Segoe UI";
+    if (!_wcsicmp(font.lfFaceName, family))
+        return original;
+    wcsncpy_s(font.lfFaceName, family, _TRUNCATE);
+    font.lfWidth = 0;
+    font.lfQuality = CLEARTYPE_QUALITY;
+    std::lock_guard<std::mutex> lock(g_nativeUiFontMutex);
+    for (const auto& entry : g_nativeUiFonts)
+        if (!memcmp(&entry.description, &font, sizeof(font)))
+            return entry.font;
+    // Never evict a font: a native control can retain its handle until unload.
+    if (g_nativeUiFonts.size() >= 256)
+        return original;
+    HFONT replacement = CreateFontIndirectW(&font);
+    if (replacement)
+        g_nativeUiFonts.push_back({font, replacement});
+    return replacement ? replacement : original;
+}
+
+static HFONT NativeUiFontOriginal(HWND hwnd)
+{
+    const HANDLE stored = GetPropW(hwnd, kNativeUiFontOriginal);
+    return stored == reinterpret_cast<HANDLE>(static_cast<INT_PTR>(-1))
+        ? nullptr : reinterpret_cast<HFONT>(stored);
+}
+
+static void NativeUiFontRestore(HWND hwnd)
+{
+    if (GetPropW(hwnd, kNativeUiFontOriginal)) {
+        DefSubclassProc(hwnd, WM_SETFONT,
+            reinterpret_cast<WPARAM>(NativeUiFontOriginal(hwnd)), TRUE);
+        RemovePropW(hwnd, kNativeUiFontOriginal);
+        RemovePropW(hwnd, kNativeUiFontAssigned);
+    }
+}
+
+static bool NativeUiFontIsOwned(HFONT font)
+{
+    std::lock_guard<std::mutex> lock(g_nativeUiFontMutex);
+    for (const auto& entry : g_nativeUiFonts)
+        if (entry.font == font)
+            return true;
+    return false;
+}
+
+static HFONT NativeUiFontApplicationFont(HWND hwnd, HFONT requested)
+{
+    if (!NativeUiFontIsOwned(requested))
+        return requested;
+    // List views and combos forward our assigned font to their children.
+    // Restore the application's font, never a cache handle deleted on unload.
+    for (HWND parent = GetParent(hwnd); parent; parent = GetParent(parent)) {
+        if (GetPropW(parent, kNativeUiFontAssigned) == reinterpret_cast<HANDLE>(requested) &&
+            GetPropW(parent, kNativeUiFontOriginal))
+            return NativeUiFontOriginal(parent);
+    }
+    if (GetPropW(hwnd, kNativeUiFontOriginal))
+        return NativeUiFontOriginal(hwnd);
+    const HFONT current = reinterpret_cast<HFONT>(DefSubclassProc(hwnd, WM_GETFONT, 0, 0));
+    // A child already inherited the replacement before it was observed.
+    return NativeUiFontIsOwned(current) ? static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT)) : current;
+}
+
+static WPARAM NativeUiFontSelect(HWND hwnd, HFONT requested)
+{
+    const HFONT original = NativeUiFontApplicationFont(hwnd, requested);
+    const HFONT replacement = NativeUiFontResolve(requested);
+    const HANDLE saved = original ? reinterpret_cast<HANDLE>(original)
+        : reinterpret_cast<HANDLE>(static_cast<INT_PTR>(-1));
+    if (!SetPropW(hwnd, kNativeUiFontOriginal, saved))
+        return reinterpret_cast<WPARAM>(original);
+    if (!SetPropW(hwnd, kNativeUiFontAssigned, reinterpret_cast<HANDLE>(replacement))) {
+        RemovePropW(hwnd, kNativeUiFontOriginal);
+        return reinterpret_cast<WPARAM>(original);
+    }
+    return reinterpret_cast<WPARAM>(replacement);
+}
+
+static void RestoreNativePropertyTabFont(HWND);
+static HFONT NativePropertyTabUnderlyingFont(HWND,HFONT);
+static LRESULT CALLBACK NativeUiFontSubclass(HWND hwnd, UINT msg, WPARAM wp,
+    LPARAM lp, DWORD_PTR)
+{
+    if (msg == WM_NCDESTROY) {
+        RemovePropW(hwnd, kNativeUiFontObserved);
+        RemovePropW(hwnd, kNativeUiFontOriginal);
+        RemovePropW(hwnd, kNativeUiFontAssigned);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, NativeUiFontSubclass);
+        return DefSubclassProc(hwnd, msg, wp, lp);
+    }
+    wchar_t cls[32] = {};
+    if(msg==WM_SETFONT && t_nativePropertyFontUpdate)
+        return DefSubclassProc(hwnd,msg,wp,lp);
+    if(msg==WM_SETFONT || msg==g_nativeUiFontSyncMessage)
+        RestoreNativePropertyTabFont(hwnd);
+    const bool synchronize = msg == g_nativeUiFontSyncMessage;
+    const bool fontEvent = msg == WM_SETFONT;
+    const bool refresh = synchronize || msg == WM_PAINT || msg == WM_SHOWWINDOW ||
+        msg == WM_DPICHANGED_AFTERPARENT || msg == WM_THEMECHANGED ||
+        msg == WM_STYLECHANGED || msg == WM_SETTINGCHANGE;
+    if (fontEvent || refresh) {
+        GetClassNameW(hwnd, cls, ARRAYSIZE(cls));
+        const bool enabled = NativeUiFontEnabled() && NativeUiFontScope(hwnd) &&
+            NativeUiFontControl(hwnd, cls);
+        if (fontEvent) {
+            if (enabled) {
+                const HFONT assigned = reinterpret_cast<HFONT>(
+                    GetPropW(hwnd, kNativeUiFontAssigned));
+                const HFONT requested = reinterpret_cast<HFONT>(wp);
+                if (!assigned || assigned != requested)
+                    wp = NativeUiFontSelect(hwnd, requested);
+            } else {
+                // The new application font supersedes the previous original.
+                RemovePropW(hwnd, kNativeUiFontOriginal);
+                RemovePropW(hwnd, kNativeUiFontAssigned);
+            }
+        } else if (!enabled) {
+            NativeUiFontRestore(hwnd);
+        } else {
+            const HFONT current = NativePropertyTabUnderlyingFont(hwnd,
+                reinterpret_cast<HFONT>(DefSubclassProc(hwnd, WM_GETFONT, 0, 0)));
+            const HFONT assigned = reinterpret_cast<HFONT>(
+                GetPropW(hwnd, kNativeUiFontAssigned));
+            if (!GetPropW(hwnd, kNativeUiFontOriginal) || current != assigned) {
+                const WPARAM replacement = NativeUiFontSelect(hwnd, current);
+                if (reinterpret_cast<HFONT>(replacement) != current)
+                    DefSubclassProc(hwnd, WM_SETFONT, replacement, TRUE);
+            }
+        }
+        if (synchronize) {
+            if (wp || !g_settings.ConsistentUIFonts ||
+                g_nativeUiFontUnloading.load(std::memory_order_acquire)) {
+                NativeUiFontRestore(hwnd);
+                RemovePropW(hwnd, kNativeUiFontObserved);
+                WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, NativeUiFontSubclass);
+            }
+            return 0;
+        }
+    }
+    return DefSubclassProc(hwnd, msg, wp, lp);
+}
+
+static void NativeUiFontObserve(HWND hwnd, LPCWSTR cls)
+{
+    if (!NativeUiFontEnabled() || !g_nativeUiFontSyncMessage ||
+        !NativeUiFontControl(hwnd, cls))
+        return;
+    DWORD pid = 0;
+    const DWORD thread = GetWindowThreadProcessId(hwnd, &pid);
+    if (pid != GetCurrentProcessId())
+        return;
+    // Dialog children can be created before the property sheet's tab control.
+    // Observe their final font assignments and recheck scope before any change.
+    if (!IsCurrentProcessRegedit() &&
+        !IsClassName(GetAncestor(hwnd, GA_ROOT), L"#32770") &&
+        !InstallerUiRoot(hwnd))
+        return;
+    if (thread != GetCurrentThreadId() && !NativeUiFontScope(hwnd))
+        return;
+    if (WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, NativeUiFontSubclass, 0)) {
+        if (!SetPropW(hwnd, kNativeUiFontObserved, reinterpret_cast<HANDLE>(1))) {
+            WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, NativeUiFontSubclass);
+            return;
+        }
+        if (g_nativeUiFontUnloading.load(std::memory_order_acquire)) {
+            SendMessageW(hwnd, g_nativeUiFontSyncMessage, TRUE, 0);
+        } else if (thread == GetCurrentThreadId())
+            SendMessageW(hwnd, g_nativeUiFontSyncMessage, 0, 0);
+        else
+            PostMessageW(hwnd, g_nativeUiFontSyncMessage, 0, 0);
+    }
+}
+
+static BOOL CALLBACK NativeUiFontRefreshChild(HWND hwnd, LPARAM remove)
+{
+    const bool stop = remove || !NativeUiFontEnabled();
+    if (g_nativeUiFontSyncMessage && GetPropW(hwnd, kNativeUiFontObserved)) {
+        // Existing controls must recompute scope even when a profile was just
+        // disabled and would now decline observation. Restore synchronously
+        // before any replacement HFONT can be released.
+        SendMessageW(hwnd, g_nativeUiFontSyncMessage, stop, 0);
+    } else if (!stop) {
+        wchar_t cls[32] = {};
+        if (GetClassNameW(hwnd, cls, ARRAYSIZE(cls)))
+            NativeUiFontObserve(hwnd, cls);
+    }
+    return TRUE;
+}
+
+static BOOL CALLBACK NativeUiFontRefreshTop(HWND hwnd, LPARAM remove)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid == GetCurrentProcessId()) {
+        NativeUiFontRefreshChild(hwnd, remove);
+        EnumChildWindows(hwnd, NativeUiFontRefreshChild, remove);
+    }
+    return TRUE;
+}
+
+static void NativeUiFontRefresh(bool remove = false)
+{
+    EnumWindows(NativeUiFontRefreshTop, remove);
+}
+
+static void NativeUiFontRelease()
+{
+    std::lock_guard<std::mutex> lock(g_nativeUiFontMutex);
+    for (const auto& entry : g_nativeUiFonts)
+        DeleteObject(entry.font);
+    g_nativeUiFonts.clear();
+}
+
 
 // Bounded HFONT cache keyed by full LOGFONT (height/charset vary per
 // dialog/DPI). Capped, oldest-evicted; each feature gets its own instance
@@ -14262,6 +14816,35 @@ static thread_local HWND t_desktopIconPaintHwnd = nullptr;
 static thread_local HWND t_rgListPaintHwnd = nullptr;
 static bool RgIsValuesList(HWND hwnd);
 static thread_local DesktopShadowTextContext* g_desktopShadowTextContext = nullptr;
+
+// File-item labels belong to the shell. Preserve their full native text
+// contracts, including measurement, wrapping, alignment and glyph advances.
+static thread_local unsigned t_nativeIconLabelPaintDepth=0;
+static bool NativeIconLabelText(HDC dc){
+    if(!IsCurrentProcessExplorer())return false;
+    HWND window=WindowFromDC(dc);
+    if(!window && (g_desktopDragImageTextHwnd || g_desktopTextPaintHwnd || t_desktopIconPaintHwnd))return true;
+    // An active native-label paint owns its temporary DCs. The fallback HWND
+    // can outlive an unrelated BeginPaint/EndPaint pair, so it cannot override
+    // that live scope. A real window DC still takes precedence above, allowing
+    // a nested Properties paint to establish its own independent scope.
+    if(!window && t_nativeIconLabelPaintDepth)return true;
+    if(!window)window=g_tlsPaintHwnd;
+    if(window)return IsDesktopIconListView(window) ||
+        (IsInsideExplorer(window) && IsInsideShellFolderView(window));
+    return t_nativeIconLabelPaintDepth!=0;
+}
+class NativeIconLabelPaintScope {
+    unsigned previous;
+public:
+    explicit NativeIconLabelPaintScope(HDC dc):previous(t_nativeIconLabelPaintDepth){
+        t_nativeIconLabelPaintDepth=NativeIconLabelText(dc)?previous+1:0;
+    }
+    ~NativeIconLabelPaintScope(){t_nativeIconLabelPaintDepth=previous;}
+    NativeIconLabelPaintScope(const NativeIconLabelPaintScope&)=delete;
+    NativeIconLabelPaintScope& operator=(const NativeIconLabelPaintScope&)=delete;
+};
+
 // Set only while DirectUI paints folder-view or Explorer status-bar text.
 // DrawTextW's process-wide common path stays one null check.
 static thread_local void* g_duiExplorerTextPaintElement = nullptr;
@@ -16029,6 +16612,9 @@ static int WINAPI DesktopDrawShadowTextEx_hook(HDC hdc, LPCWSTR text,
 {
     HWND desktopTextHwnd = g_desktopTextPaintHwnd
         ? g_desktopTextPaintHwnd : g_desktopDragImageTextHwnd;
+    if(desktopTextHwnd && IsDesktopIconListView(desktopTextHwnd))
+        return g_desktopDrawShadowTextExOrig(hdc,text,count,rc,flags,textColor,
+            shadowColor,offsetX,offsetY,shadowOptions,reserved);
     if (!g_settings.ShellTextDirectWrite || IsTextPipelineDisabled() ||
         !desktopTextHwnd || !IsDesktopIconListView(desktopTextHwnd)) {
         return g_desktopDrawShadowTextExOrig(hdc, text, count, rc, flags,
@@ -16432,8 +17018,48 @@ static void PaintSingleLineTabSeparator(
         SetDCBrushColor(hdc, previousColor);
 }
 
+// Keep native tab measurement, padding and caption placement while supplying
+// dark surfaces. Native themes can retain white fills on a late attachment.
+static bool PaintNativePropertyTabBackground(HDC hdc, INT part, INT state, LPCRECT rect)
+{
+    if (!hdc || !rect || !g_settings.FlatPropertyPresentation || IsWinUiTabStyleActive() || !IsCustomDarkModeAllowed() ||
+        SysHighContrastEnabled() || g_tabFeaturesUnloading.load(std::memory_order_acquire))
+        return false;
+    HWND tab = WindowFromDC(hdc);
+    if (!IsClassName(tab, L"SysTabControl32")) tab = g_tlsPaintHwnd;
+    if (!IsClassName(tab, L"SysTabControl32")) return false;
+    HWND root = GetAncestor(tab, GA_ROOT);
+    if (!IsClassName(root, L"#32770") || !GetPropW(root, kPropertyDialogDarkModeMarker) ||
+        FindWindowExW(root, nullptr, L"SysTabControl32", nullptr) != tab ||
+        (GetWindowLongPtrW(tab, GWL_STYLE) & (TCS_VERTICAL | TCS_BOTTOM)) ||
+        ((GetWindowLongPtrW(tab,GWL_STYLE)&TCS_OWNERDRAWFIXED)&&!GetPropW(tab,kNativeFlatTabOwner)))
+        return false;
+    const bool pane = part == TABP_PANE || part == TABP_BODY;
+    if (!pane && (part < TABP_TABITEM || part > TABP_TOPTABITEMBOTHEDGE)) return false;
+    const bool selected = state == TIS_SELECTED || state == TIS_FOCUSED;
+    COLORREF color = Win32MainDark;
+    // Hover retains a restrained dark-theme surface; selection uses bold text.
+    if(!pane && state==TIS_HOT)color=RGB(48,48,48);
+    HBRUSH fill = GetCachedSolidBrush(color);
+    if (!fill) return false;
+    FillRect_orig(hdc, rect, fill);
+    if (!pane && selected) {
+        const int stroke = (std::max)(1, MulDiv(1, GetDpiForWindow(tab), 96));
+        HBRUSH edge = GetCachedSolidBrush(Win32MainDark);
+        if (edge) {
+            RECT top{rect->left,rect->top,rect->right,rect->top+stroke};
+            RECT left{rect->left,rect->top+stroke,rect->left+stroke,rect->bottom};
+            RECT right{rect->right-stroke,rect->top+stroke,rect->right,rect->bottom};
+            FillRect_orig(hdc,&top,edge);FillRect_orig(hdc,&left,edge);FillRect_orig(hdc,&right,edge);
+        }
+    }
+    return true;
+}
+
 static bool PaintTab(HDC hdc, INT iPartId, INT iStateId, LPCRECT pRect)
 {
+    if (!IsWinUiTabStyleActive())
+        return PaintNativePropertyTabBackground(hdc, iPartId, iStateId, pRect);
     if (iPartId == TABP_PANE || !g_d2dFactory || !IsWinUiTabStyleActive() ||
         g_tabFeaturesUnloading.load(std::memory_order_acquire)) {
         return false;
@@ -18945,9 +19571,14 @@ static void MicaNativeRecord(HWND hwnd, Update&& update)
     update(it->second);
 }
 
+static HRESULT WINAPI OpeningDwmSetAttribute_hook(HWND,DWORD,LPCVOID,DWORD);
 static HRESULT WINAPI DwmSetWindowAttribute_hook(
     HWND hWnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute)
 {
+    // Windhawk owns one detour for this target. Keep all attribute policies
+    // behind that registration, with one live original trampoline.
+    if(dwAttribute==DWMWA_TRANSITIONS_FORCEDISABLED || dwAttribute==35 || dwAttribute==36)
+        return OpeningDwmSetAttribute_hook(hWnd,dwAttribute,pvAttribute,cbAttribute);
     HRESULT hr;
     if (dwAttribute == DWMWA_WINDOW_CORNER_PREFERENCE &&
         MenuShouldOverrideDwmFrame(hWnd))
@@ -20287,9 +20918,26 @@ static bool UAHWndProc(HWND hWnd, UINT uMsg, WPARAM, LPARAM lParam) {
 // icon-index -> glyph mapping (see the comment at its definition).
 static void GlyphRefreshDriveArrival(LPARAM lParam);
 
+static void ConsistentCaption(HWND hwnd, bool apply, COLORREF background);
+static void ConsistentMenuCaptionRefresh(HWND hwnd, UINT msg)
+{
+    if (msg != WM_NCPAINT && msg != WM_NCACTIVATE && msg != WM_THEMECHANGED &&
+        msg != WM_SETTINGCHANGE && msg != WM_UAHDRAWMENU && msg != WM_NCDESTROY) return;
+    static thread_local bool updating = false;
+    if (updating || IsInsideExplorer(hwnd) || IsCurrentProcessRegedit() ||
+        !GetMenu(hwnd) || (GetWindowLongPtrW(hwnd, GWL_STYLE) & WS_CHILD)) return;
+    DWORD backdrop = 0;
+    DwmGetWindowAttribute(hwnd, 38 /*DWMWA_SYSTEMBACKDROP_TYPE*/, &backdrop, sizeof(backdrop));
+    updating = true;
+    ConsistentCaption(hwnd, msg != WM_NCDESTROY && backdrop <= 1 &&
+        IsCustomDarkModeAllowed() && !g_darkModeUnloading.load(std::memory_order_acquire), Win32MainDark);
+    updating = false;
+}
+
 // DefWindowProc hooks — intercept UAH menu messages
 static decltype(&DefWindowProcW) DefWindowProcW_orig = nullptr;
 static LRESULT CALLBACK DefWindowProcW_hook(HWND hWnd, UINT uMsg, WPARAM wp, LPARAM lp) {
+    ConsistentMenuCaptionRefresh(hWnd, uMsg);
     if (GlyphOrColorIconsActive() && uMsg == WM_DEVICECHANGE
         && wp == DBT_DEVICEARRIVAL && IsCurrentProcessExplorer())
         GlyphRefreshDriveArrival(lp);
@@ -20318,6 +20966,7 @@ static LRESULT CALLBACK DefWindowProcW_hook(HWND hWnd, UINT uMsg, WPARAM wp, LPA
 }
 static decltype(&DefWindowProcA) DefWindowProcA_orig = nullptr;
 static LRESULT CALLBACK DefWindowProcA_hook(HWND hWnd, UINT uMsg, WPARAM wp, LPARAM lp) {
+    ConsistentMenuCaptionRefresh(hWnd, uMsg);
     if ((g_darkModeActive || g_settings.ModernContextMenus) &&
         GetMenu(hWnd) && UAHWndProc(hWnd, uMsg, wp, lp))
         return 0;
@@ -21166,6 +21815,8 @@ static bool IsInsideExplorer(HWND hFrom)
 static bool ModernScrollbarEnabledForWindow(HWND hwnd)
 {
     return g_settings.ModernScrollbars ||
+           (g_settings.RegeditSection && IsCurrentProcessRegedit() &&
+            !g_roundedSelectionHighContrast.load(std::memory_order_acquire)) ||
            (ExplorerBackdropMode() && IsInsideExplorer(hwnd));
 }
 
@@ -21498,6 +22149,7 @@ static void UpdateThemeColors()
         ApplyAccentMarquee();
     }
 }
+static void AclChecklistInstall(HWND hwnd);
 // Mode switch: invalidate children for repaint
 static BOOL CALLBACK ModeSwitchChildProc(HWND ch, LPARAM) {
     wchar_t cls[64] = {};
@@ -21575,12 +22227,14 @@ static BOOL CALLBACK ModeSwitchChildProc(HWND ch, LPARAM) {
         _wcsicmp(cls, L"ReBarWindow32") == 0 ||
         _wcsicmp(cls, L"ListBox") == 0 ||
         _wcsicmp(cls, L"CHECKLIST_ACLUI") == 0 ||
+        _wcsicmp(cls, L"SysTabControl32") == 0 ||
         wcsstr(cls, L"SysTabCtl") != nullptr) {
         if (IsCurrentProcessExplorer() && !ownsNativeTheming) {
             SetDarkExplorerOrDefaultTheme(ch);
             SendMessageW(ch, WM_THEMECHANGED, 0, 0);
         }
     }
+    if (dark && _wcsicmp(cls, L"CHECKLIST_ACLUI") == 0) AclChecklistInstall(ch);
     // Reuse the mode-switch sweep for an Edit opened before light-Mica
     // rename repair became available; no separate window scan is needed.
     if (!dark && (ExplorerMicaActive() || RgMicaActive()) &&
@@ -21643,6 +22297,8 @@ static LRESULT CALLBACK ThemeMsgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         const bool previousRoundedHighContrast =
             g_roundedSelectionHighContrast.exchange(
                 highContrast, std::memory_order_acq_rel);
+        if (previousRoundedHighContrast != highContrast)
+            NativeUiFontRefresh();
         if (!previousRoundedHighContrast && highContrast)
             ListSelectFadeCleanup();
         if (GetSettings()->EditFocusLine || ExplorerMicaActive() ||
@@ -23114,6 +23770,13 @@ static std::atomic<unsigned> g_cbtHooksGeneration{0};
 // need window creation. HCBT_CREATEWND also fires for the #32768 popups the
 // kernel creates inside TrackPopupMenu, which NtUserCreateWindowEx_hook never
 // sees. The window exists at that point but hasn't received WM_NCCREATE yet.
+static void ConsistentCaptionObserveNewWindow(HWND,const CREATESTRUCTW*);
+static HRESULT ConsistentCaptionDwmSet(HWND,DWORD,LPCVOID,DWORD);
+static bool ConsistentCaptionTrackingEnabled(){
+    return g_settings.EnableDarkMode||g_settings.RegeditSection||g_settings.InstallerUi;
+}
+static void OpeningTransitionObserveNewWindow(HWND,const CREATESTRUCTW*);
+static void DialogPresentationObserveNewWindow(HWND,const CREATESTRUCTW*);
 static LRESULT CALLBACK CbtProc(INT nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode == HCBT_CREATEWND)
@@ -23123,6 +23786,11 @@ static LRESULT CALLBACK CbtProc(INT nCode, WPARAM wParam, LPARAM lParam)
             reinterpret_cast<const CBT_CREATEWNDW*>(lParam)->lpcs;
         wchar_t cls[32] = {};
         GetClassNameW(hwnd, cls, ARRAYSIZE(cls));
+
+        ConsistentCaptionObserveNewWindow(hwnd,cs);
+        OpeningTransitionObserveNewWindow(hwnd,cs);
+        if (!g_isXamlProcess)
+            DialogPresentationObserveNewWindow(hwnd,cs);
 
         // ── Acrylic context menus ──────────────────────────────────────────
         // Everything MenuTryInstallAcrylic does (DWM attributes, composition
@@ -23138,7 +23806,7 @@ static LRESULT CALLBACK CbtProc(INT nCode, WPARAM wParam, LPARAM lParam)
         // ── Checkbox animation subclass ────────────────────────────────────
         // The check state isn't known yet (dialogs set it after creation);
         // CheckBoxSubclassProc reads it on the first WM_PAINT.
-        if (g_settings.RoundedButtons && cs && _wcsicmp(cls, L"Button") == 0 &&
+        if (!g_isXamlProcess && g_settings.RoundedButtons && cs && _wcsicmp(cls, L"Button") == 0 &&
             !g_checkBoxAnimUnloading.load(std::memory_order_acquire))
         {
             const LONG style = cs->style & 0xFL;
@@ -23218,7 +23886,7 @@ static bool CbtThreadCreationTime(DWORD tid, FILETIME* created)
 
 static void InstallCbtHookForThread(DWORD tid)
 {
-    if (!g_settings.RoundedButtons && !g_settings.ModernContextMenus) return;
+    if (!g_settings.RoundedButtons && !g_settings.ModernContextMenus && !g_settings.DisableWindowOpeningAnimations && !ConsistentCaptionTrackingEnabled()) return;
     const bool currentThread = tid == 0 || tid == GetCurrentThreadId();
     const unsigned generation =
         g_cbtHooksGeneration.load(std::memory_order_acquire);
@@ -26030,6 +26698,36 @@ static bool IsLegacyExplorerFrameRebar(HDC hdc)
     return rebar && IsLegacyExplorerFrame(rebar);
 }
 
+// Native hover, pressed and focus parts still belong to the control. Own only
+// common backgrounds of the positively identified header, before the separate
+// Explorer category gate. This changes no Explorer window or file-item paint.
+static bool PaintFilePickerHeaderBackground(HDC hdc, const std::wstring& cls,
+    INT part, INT state, LPCRECT rect)
+{
+    if (!hdc || !rect || state != 0)
+        return false;
+    const bool rebar = _wcsicmp(cls.c_str(), L"Rebar") == 0 &&
+        (part == 0 || part == RP_BAND || part == RP_BACKGROUND);
+    const bool common = part == 0 &&
+        (cls == L"Toolbar" || cls == L"Navigation" ||
+         cls == L"AddressBand" || cls == L"SearchBox");
+    if ((!rebar && !common) ||
+        !FilePickerHeaderChromeRoot(ResolvePaintHwndFreshFirst(hdc)))
+        return false;
+    const COLORREF color = FilePickerControlBackground(true);
+    if (FilePickerMicaActive()) {
+        const DWORD opaque = 0xFF000000u |
+            (static_cast<DWORD>(GetRValue(color)) << 16) |
+            (static_cast<DWORD>(GetGValue(color)) << 8) | GetBValue(color);
+        WriteExplorerMicaPixels(hdc, *rect, opaque);
+    } else if (HBRUSH brush = GetCachedSolidBrush(color)) {
+        FillRect_orig(hdc, rect, brush);
+    } else {
+        return false;
+    }
+    return true;
+}
+
 static bool PaintExplorerRebarMicaTintRect(HDC hdc, LPCRECT pRect)
 {
     if (!pRect)
@@ -26403,17 +27101,120 @@ static COLORREF DrawEdgeBackgroundColor(HWND hw, HDC hdc, const RECT& rc,
     return SampleBackground(hdc, rc.left + 1, rc.top + 1, sysColor, darkFixed);
 }
 
-// DrawEdge hook — replace 3D embossed separators with 1px semi-transparent line
-static decltype(&DrawEdge) DrawEdge_orig = nullptr;
+static bool FlatNativePropertyChrome(HWND window) {
+    if (!window || !g_settings.FlatPropertyPresentation || !IsCustomDarkModeAllowed() || IsWinUiTabStyleActive() ||
+        SysHighContrastEnabled()) return false;
+    HWND root=GetAncestor(window,GA_ROOT);
+    HWND tab=FindWindowExW(root,nullptr,L"SysTabControl32",nullptr);
+    return tab && !(GetWindowLongW(tab,GWL_STYLE)&(TCS_VERTICAL|TCS_BOTTOM)) &&
+        (!(GetWindowLongW(tab,GWL_STYLE)&TCS_OWNERDRAWFIXED)||GetPropW(tab,kNativeFlatTabOwner)) &&
+        IsClassName(root,L"#32770") &&
+        GetPropW(root,kPropertyDialogDarkModeMarker);
+}
+static bool FlatPropertyHorizontalRule(HWND window, const RECT* paint=nullptr) {
+    if(!FlatNativePropertyChrome(window))return false;
+    if(IsClassName(window,L"Button") && (GetWindowLongW(window,GWL_STYLE)&BS_TYPEMASK)==BS_GROUPBOX)return true;
+    if(IsClassName(window,L"Static")){
+        const LONG type=GetWindowLongW(window,GWL_STYLE)&SS_TYPEMASK;
+        if(type==SS_ETCHEDHORZ || type==SS_ETCHEDFRAME)return true;
+        const LONG ex=GetWindowLongW(window,GWL_EXSTYLE);
+        RECT rect{};GetWindowRect(window,&rect);
+        return (ex&(WS_EX_STATICEDGE|WS_EX_CLIENTEDGE)) &&
+            rect.bottom-rect.top<=MulDiv(6,GetDpiForWindow(window),96) &&
+            rect.right-rect.left>4*(rect.bottom-rect.top);
+    }
+    return paint && IsClassName(window,L"#32770") &&
+        paint->bottom-paint->top<=MulDiv(6,GetDpiForWindow(window),96) &&
+        paint->right-paint->left>4*(paint->bottom-paint->top);
+}
+static bool PaintFlatPropertyEdge(HWND window,HDC dc,LPRECT rect,
+    UINT edge,UINT flags) {
+    const bool tab=IsClassName(window,L"SysTabControl32") &&
+        FlatNativePropertyChrome(window);
+    const bool rule=FlatPropertyHorizontalRule(window,rect);
+    if(!dc || !rect || (!tab && !rule))return false;
+    const UINT bits=edge&(BDR_RAISEDOUTER|BDR_SUNKENOUTER|
+        BDR_RAISEDINNER|BDR_SUNKENINNER);
+    if(!bits || (flags&BF_DIAGONAL))return false;
+    HBRUSH brush=GetCachedSolidBrush(Win32MainDark);if(!brush)return false;
+    UINT sides=flags&(BF_LEFT|BF_TOP|BF_RIGHT|BF_BOTTOM);
+    if(!sides)sides=BF_RECT;
+    const bool frame=IsClassName(window,L"Button") ||
+        (IsClassName(window,L"Static") && (GetWindowLongW(window,GWL_STYLE)&SS_TYPEMASK)==SS_ETCHEDFRAME);
+    if(!frame && (rule || (flags&BF_MIDDLE)))FillRect_orig(dc,rect,brush);
+    else{
+        if(sides&BF_TOP){RECT r{rect->left,rect->top,rect->right,rect->top+2};FillRect_orig(dc,&r,brush);}
+        if(sides&BF_BOTTOM){RECT r{rect->left,rect->bottom-2,rect->right,rect->bottom};FillRect_orig(dc,&r,brush);}
+        if(sides&BF_LEFT){RECT r{rect->left,rect->top,rect->left+2,rect->bottom};FillRect_orig(dc,&r,brush);}
+        if(sides&BF_RIGHT){RECT r{rect->right-2,rect->top,rect->right,rect->bottom};FillRect_orig(dc,&r,brush);}
+    }
+    if(flags&BF_ADJUST){
+        const bool inner=bits&(BDR_RAISEDINNER|BDR_SUNKENINNER);
+        const bool outer=bits&(BDR_RAISEDOUTER|BDR_SUNKENOUTER);
+        const int amount=inner&&outer?2:1;
+        if(sides&BF_LEFT)rect->left+=amount;if(sides&BF_TOP)rect->top+=amount;
+        if(sides&BF_RIGHT)rect->right-=amount;if(sides&BF_BOTTOM)rect->bottom-=amount;
+    }
+    return true;
+}
+
+
+static decltype(&DrawEdge) DrawEdge_orig=nullptr;
+// Native GDI edges only. Keep MMC's general separator renderer disabled.
+static bool FlatLegacyEdgeEnabled(HWND window) {
+    if (!g_settings.FlatLegacyBorders || !g_darkModeActive ||
+        !IsCustomDarkModeAllowed() || SysHighContrastEnabled() || !window)
+        return false;
+    if (IsClassName(window,L"ScrollBar")) return false;
+    if (IsClassName(window,L"SysTabControl32") && IsWinUiTabStyleActive()) return false;
+    if (IsClassName(window,L"Button") &&
+        (GetWindowLongW(window,GWL_STYLE)&BS_TYPEMASK)!=BS_GROUPBOX) return false;
+    if (IsCurrentProcessMMC()) return true;
+    for (LPCWSTR name:{L"#32770",L"Static",L"SysTreeView32",L"SysListView32",
+                       L"SysTabControl32",L"ReBarWindow32",L"msctls_statusbar32"})
+        if (IsClassName(window,name)) return true;
+    return false;
+}
+static bool PaintFlatLegacyEdge(HWND window,HDC dc,LPRECT rect,UINT edge,UINT flags) {
+    if (!dc || !rect || !FlatLegacyEdgeEnabled(window) || (flags&BF_DIAGONAL) ||
+        rect->right<=rect->left || rect->bottom<=rect->top) return false;
+    const UINT bits=edge&(BDR_RAISEDOUTER|BDR_SUNKENOUTER|BDR_RAISEDINNER|BDR_SUNKENINNER);
+    if(!bits)return false;
+    HBRUSH brush=GetCachedSolidBrush(IsInTabbedPropertyPane(window)?PropertyPaneDarkShade():Win32MainDark);if(!brush)return false;
+    RECT adjusted=*rect;
+    if(flags&BF_ADJUST){
+        const int saved=SaveDC(dc);if(!saved)return false;
+        IntersectClipRect(dc,0,0,0,0);
+        const BOOL native=DrawEdge_orig(dc,&adjusted,edge,flags);
+        RestoreDC(dc,saved);if(!native)return false;
+    }
+    UINT sides=flags&BF_RECT;if(!sides)sides=BF_RECT;
+    const int thickness=((bits&(BDR_RAISEDOUTER|BDR_SUNKENOUTER)) &&
+        (bits&(BDR_RAISEDINNER|BDR_SUNKENINNER)))?2:1;
+    if(flags&BF_MIDDLE)FillRect_orig(dc,rect,brush);
+    else {
+        if(sides&BF_TOP){RECT r{rect->left,rect->top,rect->right,(std::min)(rect->bottom,rect->top+thickness)};FillRect_orig(dc,&r,brush);}
+        if(sides&BF_BOTTOM){RECT r{rect->left,(std::max)(rect->top,rect->bottom-thickness),rect->right,rect->bottom};FillRect_orig(dc,&r,brush);}
+        if(sides&BF_LEFT){RECT r{rect->left,rect->top,(std::min)(rect->right,rect->left+thickness),rect->bottom};FillRect_orig(dc,&r,brush);}
+        if(sides&BF_RIGHT){RECT r{(std::max)(rect->left,rect->right-thickness),rect->top,rect->right,rect->bottom};FillRect_orig(dc,&r,brush);}
+    }
+    if(flags&BF_ADJUST)*rect=adjusted;
+    return true;
+}
+
+
 BOOL WINAPI DrawEdge_hook(HDC hdc, LPRECT qrc, UINT edge, UINT grfFlags)
 {
-    if (!g_settings.ModernSeparators || !qrc)
+    if (!qrc)
         return DrawEdge_orig(hdc, qrc, edge, grfFlags);
 
     // Never replace edges on ScrollBar controls — our 1px line replacement
     // makes arrow button areas look unpainted. Let the system render normally.
     HWND hw = WindowFromDC(hdc);
     if (!hw) hw = g_tlsPaintHwnd;
+    if (PaintFlatPropertyEdge(hw,hdc,qrc,edge,grfFlags))return TRUE;
+    if (PaintFlatLegacyEdge(hw,hdc,qrc,edge,grfFlags))return TRUE;
+    if (!g_settings.ModernSeparators)return DrawEdge_orig(hdc,qrc,edge,grfFlags);
     {
         if (hw) {
             wchar_t sc[32] = {};
@@ -26437,6 +27238,8 @@ BOOL WINAPI DrawEdge_hook(HDC hdc, LPRECT qrc, UINT edge, UINT grfFlags)
 
         }
     }
+
+
 
     // Intercept ANY 3D edge — check if any BDR_* bit is set.
     // This catches all combinations: EDGE_SUNKEN, EDGE_RAISED, EDGE_ETCHED,
@@ -26770,6 +27573,18 @@ static D2D1_COLOR_F GetSelectionRingColor(bool dark, bool focusedRing)
         return dark ? D2D1::ColorF(1.f, 1.f, 1.f, 1.f) : D2D1::ColorF(0.f, 0.f, 0.f, 0xE4 / 255.f);
     const COLORREF ac = GetAccentIndicator();
     return D2D1::ColorF(GetRValue(ac) / 255.f, GetGValue(ac) / 255.f, GetBValue(ac) / 255.f, 1.f);
+}
+
+// Compact dialog rows use the selected fill as their primary indicator.
+// Keep an accent edge, but avoid an opaque white two-DIP frame when the
+// system accent is pale. The existing keyboard-focus path remains distinct.
+static D2D1_COLOR_F DialogSelectionRingColor(HWND window,bool compact,
+    bool focused,D2D1_COLOR_F color) {
+    if(!window || !compact || SysHighContrastEnabled() || !IsCustomDarkModeAllowed())return color;
+    HWND root=GetAncestor(window,GA_ROOT);
+    if(!IsClassName(root,L"#32770") || !GetPropW(root,kPropertyDialogDarkModeMarker))return color;
+    color.a*=focused?0.65f:0.28f;
+    return color;
 }
 
 // Bakes outside-shell-context fill + ring into a per-thread, DPI-keyed
@@ -27832,6 +28647,8 @@ static bool DrawRoundedItemBg(HDC hdc, LPCRECT pRect, INT iStateId, bool isTreeV
         ringColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
     else
         ringColor = GetWinUiItemFillColor(dark, 2);
+
+    ringColor = DialogSelectionRingColor(itemHwnd, compactItem, focusedRing, ringColor);
 
     // Fade the bordered-pill in on selection (see ListSelectFade* above) --
     // the hover state is already excluded from drawBorder, so this only ever
@@ -32450,7 +33267,8 @@ static bool PaintControlBorder(HDC hdc, INT iPartId, INT iStateId,
     // Bottom line clipped to the border's rounded rect (rr) so its ends
     // follow the corner curve. Needs an explicit ID2D1Layer, cached in
     // D2DThreadCache -- ID2D1DCRenderTarget lacks PushLayer(nullptr).
-    const bool wantEditLine = focused || (isEditBorder && !disabled);
+    const bool wantEditLine = g_settings.EditBottomLine &&
+        (focused || (isEditBorder && !disabled));
     Microsoft::WRL::ComPtr<ID2D1RoundedRectangleGeometry> lineClipGeom;
     D2DThreadCache* lineCache = wantEditLine ? D2DGetThreadCache() : nullptr;
     if (wantEditLine) {
@@ -32737,7 +33555,8 @@ static LRESULT CALLBACK ModernBorderSubclassProc(
             else if (dwRefData == 2) {
                 // Same 1px line technique as DrawEdge_hook's separator
                 // replacement, just oriented to whichever side is longer.
-                const COLORREF lineClr = dark ? RGB(48, 48, 48) : RGB(224, 224, 224);
+                const COLORREF lineClr = FlatPropertyHorizontalRule(hwnd)
+                    ? Win32MainDark : dark ? RGB(48,48,48) : RGB(224,224,224);
                 HPEN hPen = CreatePen(PS_SOLID, 1, lineClr);
                 if (hPen) {
                     HPEN oldPen = (HPEN)SelectObject(hdc, hPen);
@@ -35307,6 +36126,8 @@ static bool HandleThemeDraw(HTHEME hTheme, HDC hdc, INT iPartId, INT iStateId, L
 
     // TABP_PANE (9) / TABP_BODY (10) — tab content area background
     if (cls == L"Tab" && (iPartId == 9 || iPartId == 10)) {
+        if (PaintNativePropertyTabBackground(hdc, iPartId, iStateId, pRect))
+            return true;
         // Not widened here: this hdc belongs to the tab control itself, and
         // a child window's DC is clipped to its own bounds regardless of
         // what rect we hand FillRect. Reaching the real dialog edges needs
@@ -35384,6 +36205,12 @@ static bool HandleThemeDraw(HTHEME hTheme, HDC hdc, INT iPartId, INT iStateId, L
     // Modern GroupBox — replace 3D border with subtle rounded border
     // BP_GROUPBOX = 4; border-only (no fill) to avoid background mismatch
     // with child controls that paint with the dialog's background color.
+    if (cls == L"Button" && iPartId == BP_GROUPBOX) {
+        HWND owner=WindowFromDC(hdc);if(!owner)owner=g_tlsPaintHwnd;
+        if(FlatNativePropertyChrome(owner)){
+            return true; // Border only: preserve sibling controls and the native caption.
+        }
+    }
     if (g_settings.ModernSeparators && cls == L"Button" && iPartId == BP_GROUPBOX) {
         if (!g_d2dFactory) return false;
         const int w = pRect->right - pRect->left;
@@ -35613,7 +36440,7 @@ static bool HandleThemeDraw(HTHEME hTheme, HDC hdc, INT iPartId, INT iStateId, L
     // Explorer surface, and inside Explorer explorerMicaScrollbar covers
     // the file list as well. Leaving the list out left it native while
     // the tree beside it was ours.
-    const bool modernScrollbar = g_settings.ModernScrollbars ||
+    const bool modernScrollbar = ModernScrollbarEnabledForWindow(ScrollBarOwnerFromDc(hdc)) ||
         explorerMicaScrollbar || pickerNavScrollbar || pickerListScrollbar;
     if (cls == L"ScrollBar" && modernScrollbar) {
         // An excluded process's picker is natively dark under a dark system.
@@ -36460,6 +37287,10 @@ static bool HandleThemeDraw(HTHEME hTheme, HDC hdc, INT iPartId, INT iStateId, L
             else         { if (PaintProgressBar(hdc, iPartId, iStateId, pRect)) return true; }
         }
     }
+
+    // Picker chrome belongs to the dialog even when Explorer styling is off.
+    if (PaintFilePickerHeaderBackground(hdc, cls, iPartId, iStateId, pRect))
+        return true;
 
     // Explorer-only features
     if (!g_settings.ExplorerSection) return false;
@@ -37833,8 +38664,23 @@ static HRESULT SetItemsViewOrDefaultTheme(HWND hwnd)
         nullptr);
 }
 
+// Preserve the shell's native item-list theme as well as its text calls.
+// Property sheets and common pickers have different roots and stay scoped
+// to their existing theming. Desktop identification must work before show.
+static bool NativeExplorerItemListTheme(HWND hwnd)
+{
+    if(!IsCurrentProcessExplorer() || !IsClassName(hwnd,L"SysListView32"))return false;
+    return (IsInsideExplorer(hwnd) && IsInsideShellFolderView(hwnd)) ||
+        (IsInsideDesktop(hwnd) && IsClassName(GetParent(hwnd),L"SHELLDLL_DefView"));
+}
+
 HRESULT WINAPI SetWindowTheme_hook(HWND hwnd, LPCWSTR pszSubAppName, LPCWSTR pszSubIdList)
 {
+    if(NativeExplorerItemListTheme(hwnd)){
+        const HRESULT result=SetWindowTheme_orig(hwnd,pszSubAppName,pszSubIdList);
+        if(SUCCEEDED(result))RemovePropW(hwnd,kAppliedThemeProp);
+        return result;
+    }
     // Early exit for themes we apply repeatedly from several paths. Skipping
     // identical SetWindowTheme calls avoids duplicate WM_THEMECHANGED cascades
     // while leaving DrawTheme/custom-draw hooks untouched.
@@ -37926,6 +38772,11 @@ static void DrawDuiHeaderItemDivider(HDC hdc, LPCRECT pRect)
 // PaintExplorerRebarMicaTintRect instead.)
 static void DrawRebarBandLine(HDC hdc, LPCRECT pRect)
 {
+    // The rebar background is already filled by both theme paths. The flat
+    // legacy-border option must not add a replacement rule over that fill.
+    if (g_settings.FlatLegacyBorders && IsCurrentProcessMMC() &&
+        g_darkModeActive && IsCustomDarkModeAllowed() && !SysHighContrastEnabled())
+        return;
     HPEN hPen = CreatePen(PS_SOLID, 1, RGB(48, 48, 48));
     if (!hPen) return;
     HGDIOBJ old = SelectObject(hdc, hPen);
@@ -38306,17 +39157,55 @@ void SettingsChanged(int oldMode);
 void BeforeUninit();
 }  // namespace StatusWidth
 
+// RichEdit document runs retain their authored colors and native glyph pipeline.
+// Its buffered DC can have no HWND; BeginPaint supplies the owning control then.
+static bool IsRichEditDocumentDc(HDC dc)
+{
+    HWND hwnd = WindowFromDC(dc);
+    if (!hwnd) hwnd = g_tlsPaintHwnd;
+    wchar_t cls[64] = {};
+    if (!hwnd || !GetClassNameW(hwnd, cls, ARRAYSIZE(cls))) return false;
+    return !_wcsnicmp(cls, L"RichEdit", 8) ||
+        !_wcsicmp(cls, L"TRichEditViewer");
+}
+
+// BeginPaint can synchronously erase and paint descendants before returning.
+// Restore the enclosing owner after nested paints, but keep the most recent
+// outer owner after its EndPaint for the existing outside-paint consumers.
+struct PaintOwnerFrame {
+    HWND window, previous;
+    bool insideExplorer, trackingExplorer;
+};
+static thread_local std::vector<PaintOwnerFrame> t_paintOwnerFrames;
+static void PaintOwnerEnter(HWND window){
+    t_paintOwnerFrames.push_back({window,g_tlsPaintHwnd,
+        g_tlsPaintWasInsideExplorer,g_tlsExplorerMicaPaintTrackingEnabled});
+    g_tlsPaintHwnd=window;
+}
+static void PaintOwnerLeave(HWND window,bool completed){
+    if(t_paintOwnerFrames.empty() || t_paintOwnerFrames.back().window!=window)return;
+    const auto frame=t_paintOwnerFrames.back();t_paintOwnerFrames.pop_back();
+    g_tlsPaintHwnd=t_paintOwnerFrames.empty()
+        ? (completed?window:frame.previous) : t_paintOwnerFrames.back().window;
+    if(!completed || !t_paintOwnerFrames.empty()){
+        g_tlsPaintWasInsideExplorer=frame.insideExplorer;
+        g_tlsExplorerMicaPaintTrackingEnabled=frame.trackingExplorer;
+    }
+}
+
 HDC WINAPI BeginPaint_hook(HWND hWnd, LPPAINTSTRUCT lpPaint)
 {
+    const HWND previousPaintHwnd=g_tlsPaintHwnd;
+    PaintOwnerEnter(hWnd);
     const bool trackExplorerMicaPaint =
         ExplorerBackdropMode() && IsCurrentProcessExplorer();
     if (trackExplorerMicaPaint != g_tlsExplorerMicaPaintTrackingEnabled ||
-        (trackExplorerMicaPaint && hWnd != g_tlsPaintHwnd)) {
+        (trackExplorerMicaPaint && hWnd != previousPaintHwnd)) {
         g_tlsPaintWasInsideExplorer =
             trackExplorerMicaPaint && IsInsideExplorer(hWnd);
         g_tlsExplorerMicaPaintTrackingEnabled = trackExplorerMicaPaint;
     }
-    g_tlsPaintHwnd = hWnd;
+
     ExplorerMicaStatusBarBeginPaint(hWnd);
     ExplorerMicaPaneEdgeBeginPaint(hWnd);
     FilePickerSeparatorsBeginPaint(hWnd);
@@ -38377,8 +39266,10 @@ HDC WINAPI BeginPaint_hook(HWND hWnd, LPPAINTSTRUCT lpPaint)
         IsLegacyExplorerFrame(hWnd))
         t_controlPanelDuiPaintHwnd = hWnd;
     HDC hdc = BeginPaint_orig(hWnd, lpPaint);
-    if (!hdc)
+    if (!hdc) {
         LegacyRebarTextEndPaint(hWnd);
+        PaintOwnerLeave(hWnd,false);
+    }
     else
         ++t_paintDepth;
     if (hdc && t_currentEditPaintHwnd == hWnd &&
@@ -38436,6 +39327,7 @@ BOOL WINAPI EndPaint_hook(HWND hWnd, const PAINTSTRUCT* lpPaint)
     LegacyRebarTextEndPaint(hWnd);
     if (statusWidthApply)
         StatusWidth::AfterEndPaint(hWnd);
+    PaintOwnerLeave(hWnd,true);
     return result;
 }
 
@@ -38523,8 +39415,9 @@ static bool CenterWinUiTabTextRect(
         return false;
 
     *adjusted = *source;
-    adjusted->left = itemRect.left;
-    adjusted->right = itemRect.right;
+    // Keep comctl32's caption insets. The item bounds include the native
+    // horizontal padding; replacing the content rect with them lets the
+    // substituted glyphs consume the space between adjacent captions.
     if (g_settings.SingleLinePropertyTabs &&
         GetPropW(tab, kSingleLinePropertyTabProp)) {
         LONG topOffset = 0;
@@ -38911,11 +39804,14 @@ static HWND ExplorerDialogReadOnlyAnalyseOwner(HDC hdc, const void* text,
     return paint.hwnd;
 }
 
+static HWND InstallerNativeCaptionOwner(HDC dc);
 static HRESULT WINAPI NavTV_ScriptStringAnalyse_hook(
     HDC hdc, const void* pString, int cString, int cGlyphs, int iCharset,
     DWORD dwFlags, int iReqWidth, void* pControl, void* pState,
     const int* piDx, void* pTabdef, const BYTE* pbInClass, void** pssa)
 {
+    if(NativeIconLabelText(hdc)||InstallerNativeCaptionOwner(hdc))return NavTV_ScriptStringAnalyse_orig(hdc,pString,cString,cGlyphs,iCharset,dwFlags,iReqWidth,pControl,pState,piDx,pTabdef,pbInClass,pssa);
+
     HRESULT hr = NavTV_ScriptStringAnalyse_orig(hdc, pString, cString, cGlyphs,
         iCharset, dwFlags, iReqWidth, pControl, pState, piDx, pTabdef,
         pbInClass, pssa);
@@ -38984,6 +39880,8 @@ static HRESULT WINAPI NavTV_ScriptStringOut_hook(
     void* ssa, int iX, int iY, UINT uOptions, const RECT* prc,
     int iMinSel, int iMaxSel, BOOL fDisabled)
 {
+    if(t_nativeIconLabelPaintDepth)return NavTV_ScriptStringOut_orig(ssa,iX,iY,uOptions,prc,iMinSel,iMaxSel,fDisabled);
+
     NavTvUniscribeStashed stashed;
     bool found = false;
     if (g_navTvUniscribeStashCount.load(std::memory_order_acquire) != 0) {
@@ -41373,6 +42271,15 @@ static bool IsInsideSearchEditBoxWrapper(HWND hwnd)
 
 int WINAPI FillRect_hook(HDC hdc, const RECT* lprc, HBRUSH hbr)
 {
+    if (t_installerPaintWindow) {
+        if (InstallerReplaceBrush(t_installerPaintWindow, hbr)) {
+            if (HBRUSH brush = GetCachedSolidBrush(Win32MainDark)) {
+                t_installerNeutralDC = hdc;
+                return FillRect_orig(hdc, lprc, brush);
+            }
+        } else if (t_installerNeutralDC == hdc) t_installerNeutralDC = nullptr;
+    }
+
     // One brush query serves every check below, and only they read it.
     LOGBRUSH lb = {};
     const bool gotColor = hbr &&
@@ -41487,6 +42394,10 @@ int WINAPI FillRect_hook(HDC hdc, const RECT* lprc, HBRUSH hbr)
 static decltype(&SetBkColor) SetBkColor_orig = nullptr;
 COLORREF WINAPI SetBkColor_hook(HDC hdc, COLORREF color)
 {
+    if (t_installerPaintWindow && IsCustomDarkModeAllowed() &&
+        InstallerSurfaceControl(t_installerPaintWindow) && InstallerNeutralSurface(color))
+        return SetBkColor_orig(hdc, Win32MainDark);
+
     if (color == RGB(255, 255, 255) && IsModernLightEditDc(hdc)) {
         [[clang::musttail]] return SetBkColor_orig(hdc, kModernLtEditBk);
     }
@@ -41512,6 +42423,23 @@ COLORREF WINAPI SetBkColor_hook(HDC hdc, COLORREF color)
     [[clang::musttail]] return SetBkColor_orig(hdc, color);
 }
 
+// Inno's known checklist painter sets text after its item FillRect. Follow
+// only that exact remapped DC; keep selected/colored items and disabled gray.
+static decltype(&SetTextColor) InstallerSetTextColor_orig = nullptr;
+static COLORREF WINAPI InstallerSetTextColor_hook(HDC dc, COLORREF color)
+{
+    if (dc == t_installerNeutralDC && t_installerPaintWindow && IsCustomDarkModeAllowed()) {
+        wchar_t cls[64] = {};
+        GetClassNameW(t_installerPaintWindow, cls, ARRAYSIZE(cls));
+        if (!_wcsicmp(cls, L"TNewCheckListBox")) {
+            const int low = std::min({GetRValue(color), GetGValue(color), GetBValue(color)});
+            const int high = std::max({GetRValue(color), GetGValue(color), GetBValue(color)});
+            if (high <= 64 && high - low <= 12) color = WinUI::Dark::TextFillColorPrimary;
+        }
+    }
+    return InstallerSetTextColor_orig(dc, color);
+}
+
 // ── DrawThemeIcon → DragDrop badge glyphs ─────────────────────────────────
 // Some DD_COPY/MOVE/UPDATEMETADATA/CREATELINK/WARNING/NONE badges (parts
 // 1-6) draw through DrawThemeIcon instead of DrawThemeBackground(Ex) --
@@ -41529,11 +42457,139 @@ HRESULT WINAPI DrawThemeIcon_hook(HTHEME hTheme, HDC hdc, int iPartId,
         iImageIndex);
 }
 
+static HFONT NativePropertyCaptionBaseFont(HWND,HFONT);
+// Use the native family and point size: regular labels, bold selected label.
+// The full item height supplies clearance for descenders rather than reusing
+// the theme's smaller, asymmetrically inset caption rectangle.
+static bool DrawNativePropertyTabCaption(HTHEME theme,HDC dc,int part,int state,
+    LPCWSTR text,int count,DWORD flags,LPCRECT source,const DTTOPTS* options) {
+    if(!g_settings.FlatPropertyPresentation || !theme || !dc || !source || !text || (flags&DT_CALCRECT) ||
+        IsWinUiTabStyleActive() || !IsCustomDarkModeAllowed() || SysHighContrastEnabled() ||
+        g_tabFeaturesUnloading.load(std::memory_order_acquire) || GetCachedThemeClass(theme)!=L"Tab" ||
+        part<TABP_TABITEM || part>TABP_TOPTABITEMBOTHEDGE)return false;
+    HWND tab=WindowFromDC(dc);if(!IsClassName(tab,L"SysTabControl32"))tab=g_tlsPaintHwnd;
+    HWND root=tab?GetAncestor(tab,GA_ROOT):nullptr;
+    if(!IsClassName(tab,L"SysTabControl32") || !IsClassName(root,L"#32770") ||
+        !GetPropW(root,kPropertyDialogDarkModeMarker) ||
+        FindWindowExW(root,nullptr,L"SysTabControl32",nullptr)!=tab ||
+        (GetWindowLongPtrW(tab,GWL_STYLE)&(TCS_VERTICAL|TCS_BOTTOM|TCS_OWNERDRAWFIXED)))return false;
+    TCHITTESTINFO hit{};hit.pt={(source->left+source->right)/2,(source->top+source->bottom)/2};
+    const int index=TabCtrl_HitTest(tab,&hit);if(index<0)return false;
+    TCITEMW item{};item.mask=TCIF_IMAGE;item.iImage=-1;
+    if(TabCtrl_GetItem(tab,index,&item) && item.iImage>=0)return false;
+    RECT rect{};if(!TabCtrl_GetItemRect(tab,index,&rect))return false;
+    const int inset=0; // Native item padding already reserves caption breathing room.
+    rect.left+=inset;rect.right-=inset;
+    // Selected native items can be inflated vertically. Use the common row
+    // interior so changing selection never moves a caption's baseline.
+    if(TabCtrl_GetRowCount(tab)==1){
+        for(int i=0;i<TabCtrl_GetItemCount(tab);i++){
+            RECT peer{};if(TabCtrl_GetItemRect(tab,i,&peer)){
+                rect.top=(std::max)(rect.top,peer.top);
+                rect.bottom=(std::min)(rect.bottom,peer.bottom);
+            }
+        }
+    }
+    rect.top+=1;rect.bottom-=1;
+    HFONT font=reinterpret_cast<HFONT>(GetCurrentObject(dc,OBJ_FONT));LOGFONTW description{};
+    font=NativePropertyCaptionBaseFont(tab,font);
+    if(!font || !GetObjectW(font,sizeof(description),&description))return false;
+    description.lfWeight=(state==TIS_SELECTED || state==TIS_FOCUSED)?FW_BOLD:FW_NORMAL;
+    HFONT caption=g_winUiTabFontCache.Ensure(description);if(!caption)return false;
+    if(options && (options->dwFlags&(DTT_CALLBACK|DTT_CALCRECT)))return false;
+    DTTOPTS draw{sizeof(DTTOPTS)};
+    draw.dwFlags=DTT_TEXTCOLOR|(options?(options->dwFlags&DTT_COMPOSITED):0);
+    draw.crText=state==TIS_DISABLED?RGB(128,128,128):RGB(235,235,235);
+    LOGFONTW regularDescription=description;regularDescription.lfWeight=FW_NORMAL;
+    HFONT regular=g_winUiTabFontCache.Ensure(regularDescription);
+    LOGFONTW boldDescription=description;boldDescription.lfWeight=FW_BOLD;
+    HFONT bold=g_winUiTabFontCache.Ensure(boldDescription);
+    if(!regular || !bold)return false;
+    HGDIOBJ previous=SelectObject(dc,regular);TEXTMETRICW regularMetric{},boldMetric{};
+    GetTextMetricsW(dc,&regularMetric);SelectObject(dc,bold);GetTextMetricsW(dc,&boldMetric);
+    const int ascent=(std::max)(regularMetric.tmAscent,boldMetric.tmAscent);
+    const int descent=(std::max)(regularMetric.tmDescent,boldMetric.tmDescent);
+    const int baseline=rect.top+(rect.bottom-rect.top-ascent-descent)/2+ascent;
+    SelectObject(dc,caption);TEXTMETRICW metric{};GetTextMetricsW(dc,&metric);
+    rect.top=baseline-metric.tmAscent;
+    // Part zero explicitly uses the selected DC font; a themed part can
+    // replace it with the theme's normal font and silently lose bold weight.
+    const HRESULT result=DrawThemeTextEx_orig(theme,dc,0,0,text,count,
+        (flags&~(DT_WORDBREAK|DT_VCENTER|DT_BOTTOM))|DT_SINGLELINE|DT_TOP|DT_CENTER,&rect,&draw);
+    SelectObject(dc,previous);return SUCCEEDED(result);
+}
+
+// Known Inno wrappers paint ordinary native captions. A fresh glow/DIB pass
+// is unnecessary there and can bring a pale opaque cell back over the adapter's
+// dark surface. Keep native shaping/metrics and normalize only that paint's
+// neutral text/background colors. Never enter RichEdit or arbitrary VCL paint.
+static HWND InstallerNativeCaptionOwner(HDC dc){
+    HWND owner=t_installerPaintWindow;
+    if(!dc||!owner||!IsCustomDarkModeAllowed()||SysHighContrastEnabled()||
+       InstallerWindowEngine(owner)!=InstallerEngine::Inno)return nullptr;
+    HWND direct=WindowFromDC(dc);
+    if(direct&&direct!=owner)return nullptr;
+    wchar_t cls[64]{};if(!GetClassNameW(owner,cls,64))return nullptr;
+    if(_wcsicmp(cls,L"TNewStaticText")&&_wcsicmp(cls,L"TNewRadioButton")&&
+       _wcsicmp(cls,L"TNewCheckBox")&&_wcsicmp(cls,L"TNewButton"))return nullptr;
+    COLORREF background=GetBkColor(dc);
+    if(background!=Win32MainDark&&!InstallerNeutralSurface(background))return nullptr;
+    return owner;
+}
+class InstallerNativeCaptionScope {
+    HDC dc=nullptr;
+    COLORREF previousText=CLR_INVALID,previousBackground=CLR_INVALID;
+    bool previousEntry=false;
+public:
+    explicit InstallerNativeCaptionScope(HDC candidate){
+        HWND owner=InstallerNativeCaptionOwner(candidate);if(!owner)return;
+        previousText=GetTextColor(candidate);previousBackground=GetBkColor(candidate);
+        if(previousText==CLR_INVALID||previousBackground==CLR_INVALID)return;
+        dc=candidate;previousEntry=g_glowEntry;g_glowEntry=true;
+        const int low=std::min({GetRValue(previousText),GetGValue(previousText),GetBValue(previousText)});
+        const int high=std::max({GetRValue(previousText),GetGValue(previousText),GetBValue(previousText)});
+        if(high-low<=12&&high<=64)
+            SetTextColor(dc,IsWindowEnabled(owner)?WinUI::Dark::TextFillColorPrimary:RGB(157,157,157));
+        SetBkColor_orig(dc,Win32MainDark);
+    }
+    ~InstallerNativeCaptionScope(){
+        if(!dc)return;
+        SetBkColor_orig(dc,previousBackground);SetTextColor(dc,previousText);
+        g_glowEntry=previousEntry;
+    }
+    InstallerNativeCaptionScope(const InstallerNativeCaptionScope&)=delete;
+    InstallerNativeCaptionScope& operator=(const InstallerNativeCaptionScope&)=delete;
+    bool Active()const{return dc!=nullptr;}
+    COLORREF Color()const{return dc?GetTextColor(dc):CLR_INVALID;}
+    DTTOPTS ThemeOptions(const DTTOPTS* input)const{
+        DTTOPTS value{sizeof(DTTOPTS)};if(input)value=*input;
+        // Explicit authored colored captions keep their color. Neutral theme
+        // black is replaced only on this known restyled caption surface.
+        bool authored=false;
+        if(input&&(input->dwFlags&DTT_TEXTCOLOR)){
+            int low=std::min({GetRValue(input->crText),GetGValue(input->crText),GetBValue(input->crText)});
+            int high=std::max({GetRValue(input->crText),GetGValue(input->crText),GetBValue(input->crText)});
+            authored=high-low>12||high>64;
+        }
+        if(!authored){value.dwFlags|=DTT_TEXTCOLOR;value.crText=Color();}
+        return value;
+    }
+};
+
 // ── DrawThemeText → redirect to DrawThemeTextEx ──────────────────────────
 HRESULT WINAPI DrawThemeText_hook(HTHEME hTheme, HDC hdc, int iPartId,
     int iStateId, LPCWSTR pszText, int cchText, DWORD dwTextFlags,
     DWORD dwTextFlags2, LPCRECT pRect)
 {
+    if(NativeIconLabelText(hdc))return DrawThemeText_orig(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,dwTextFlags2,pRect);
+    InstallerNativeCaptionScope installerCaption(hdc);
+    if(installerCaption.Active()){
+        if(dwTextFlags2||!pRect)return DrawThemeText_orig(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,dwTextFlags2,pRect);
+        DTTOPTS nativeOptions=installerCaption.ThemeOptions(nullptr);RECT nativeRect=*pRect;
+        return DrawThemeTextEx_orig(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,&nativeRect,&nativeOptions);
+    }
+
+    if (!dwTextFlags2 && DrawNativePropertyTabCaption(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,pRect,nullptr)) return S_OK;
     const bool dialogDrawn = !dwTextFlags2 && TryDrawLegacyRebarThemeText(hTheme, hdc,
             iPartId, iStateId, pszText, cchText, pRect, dwTextFlags,
             nullptr);
@@ -41575,10 +42631,15 @@ HRESULT WINAPI DrawThemeText_hook(HTHEME hTheme, HDC hdc, int iPartId,
         HFONT srcFont = (HFONT)GetCurrentObject(hdc, OBJ_FONT);
         LOGFONTW lf = {};
         if (srcFont && GetObjectW(srcFont, sizeof(lf), &lf)) {
-            wcsncpy_s(lf.lfFaceName, SegoeUiVariableFace(), _TRUNCATE);
-            lf.lfWeight = FW_SEMIBOLD;
+            const bool normalized = NativeUiFontEnabled() &&
+                (!_wcsicmp(lf.lfFaceName, L"Segoe UI Variable Text") ||
+                 !_wcsicmp(lf.lfFaceName, L"Segoe UI"));
+            if (!normalized) {
+                wcsncpy_s(lf.lfFaceName, SegoeUiVariableFace(), _TRUNCATE);
+                lf.lfWeight = FW_SEMIBOLD;
+            }
             const float tabFontSizePx = std::max(
-                1.0f, std::abs(static_cast<float>(lf.lfHeight)) * 1.02f);
+                1.0f, std::abs(static_cast<float>(lf.lfHeight)) * (normalized ? 1.0f : 1.02f));
             lf.lfHeight = lf.lfHeight < 0
                 ? -static_cast<LONG>(std::lround(tabFontSizePx))
                 : static_cast<LONG>(std::lround(tabFontSizePx));
@@ -41791,6 +42852,17 @@ HRESULT WINAPI DrawThemeTextEx_hook(HTHEME hTheme, HDC hdc, int iPartId,
     int iStateId, LPCWSTR pszText, int cchText, DWORD dwTextFlags,
     LPRECT pRect, const DTTOPTS* pOptions)
 {
+    if(NativeIconLabelText(hdc))return DrawThemeTextEx_orig(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,pRect,pOptions);
+    if(InstallerNativeCaptionOwner(hdc)&&pOptions&&
+       (pOptions->dwSize!=sizeof(DTTOPTS)||(pOptions->dwFlags&DTT_CALLBACK)))
+        return DrawThemeTextEx_orig(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,pRect,pOptions);
+    InstallerNativeCaptionScope installerCaption(hdc);
+    if(installerCaption.Active()){
+        DTTOPTS nativeOptions=installerCaption.ThemeOptions(pOptions);
+        return DrawThemeTextEx_orig(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,pRect,&nativeOptions);
+    }
+
+    if (DrawNativePropertyTabCaption(hTheme,hdc,iPartId,iStateId,pszText,cchText,dwTextFlags,pRect,pOptions)) return S_OK;
     const bool dialogDrawn = TryDrawLegacyRebarThemeText(hTheme, hdc, iPartId, iStateId,
             pszText, cchText, pRect, dwTextFlags, pOptions);
     if (dialogDrawn)
@@ -42415,6 +43487,43 @@ static thread_local SysLinkPillCapture g_sysLinkPillCapture;
 // (plain SetTextColor leaves alpha at 0 there -- see the comment on
 // DrawTextW_hook itself). Returns false when the buffer or the glow call
 // isn't usable, so the caller can fall back to SetTextColor+DrawTextW_orig.
+// Native disabled Static captions use an embossed DrawState mask. On our dark
+// dialog surface its light offset becomes an unwanted second text silhouette.
+// Keep native layout/mnemonics and the disabled state; use one flat grey mask.
+static decltype(&DrawStateW) DrawStateW_orig = nullptr;
+static bool FlatDisabledStaticText(HWND window, UINT flags) {
+    if (!window || !(flags & DSS_DISABLED) || SysHighContrastEnabled() ||
+        !IsCustomDarkModeAllowed() || IsWindowEnabled(window) ||
+        !IsClassName(window, L"Static")) return false;
+    const UINT type = flags & 0xF;
+    if (type != DST_TEXT && type != DST_PREFIXTEXT && type != DST_COMPLEX)
+        return false;
+    const LONG style = GetWindowLongW(window, GWL_STYLE) & SS_TYPEMASK;
+    if (style != SS_LEFT && style != SS_CENTER && style != SS_RIGHT &&
+        style != SS_SIMPLE && style != SS_LEFTNOWORDWRAP) return false;
+    HWND root = GetAncestor(window, GA_ROOT);
+    return IsClassName(root, L"#32770") &&
+        GetPropW(root, kPropertyDialogDarkModeMarker);
+}
+static BOOL WINAPI DrawStateW_hook(HDC dc, HBRUSH brush,
+    DRAWSTATEPROC callback, LPARAM data, WPARAM length,
+    int x, int y, int cx, int cy, UINT flags) {
+    HWND window = g_tlsPaintHwnd ? g_tlsPaintHwnd : WindowFromDC(dc);
+    if (!FlatDisabledStaticText(window, flags))
+        return DrawStateW_orig(dc, brush, callback, data, length,
+            x, y, cx, cy, flags);
+    HBRUSH flat = GetCachedSolidBrush(RGB(157, 157, 157));
+    if (!flat) return DrawStateW_orig(dc, brush, callback, data, length,
+        x, y, cx, cy, flags);
+    const bool prior = g_glowEntry;
+    g_glowEntry = true; // Native monochrome mask must not be recolored as text.
+    BOOL result = DrawStateW_orig(dc, flat, callback, data, length,
+        x, y, cx, cy, (flags & ~DSS_DISABLED) | DSS_MONO);
+    g_glowEntry = prior;
+    return result;
+}
+
+
 static bool DrawTextGlowBuffered(HDC hdc, LPCWSTR lpchText, INT cchText,
     LPRECT lprc, UINT format, COLORREF textClr, INT* outResult)
 {
@@ -42568,6 +43677,14 @@ static bool TryDrawLegacyRebarMutableText(HDC hdc, LPCWSTR text, INT count,
 // tail-calls, so it can't restore the DC itself).
 INT WINAPI DrawTextW_hook(HDC hdc, LPCWSTR lpchText, INT cchText, LPRECT lprc, UINT format)
 {
+    if(NativeIconLabelText(hdc))return DrawTextW_orig(hdc,lpchText,cchText,lprc,format);
+    {
+        InstallerNativeCaptionScope installerCaption(hdc);
+        if(installerCaption.Active())return DrawTextW_orig(hdc,lpchText,cchText,lprc,format);
+    }
+
+    if (IsRichEditDocumentDc(hdc))
+        return DrawTextW_orig(hdc, lpchText, cchText, lprc, format);
     if (g_ribbonTextHost)
         LegacyRibbonObserveDrawTextCaller(hdc, format, __builtin_return_address(0));
     INT ribbonResult = 0;
@@ -42880,6 +43997,14 @@ static INT WINAPI DrawTextW_hook_impl(HDC hdc, LPCWSTR lpchText, INT cchText,
 BOOL WINAPI DrawTextExW_hook(HDC hdc, LPWSTR lpchText, INT cchText,
     LPRECT lprc, UINT format, LPDRAWTEXTPARAMS lpdtp)
 {
+    if(NativeIconLabelText(hdc))return DrawTextExW_orig(hdc,lpchText,cchText,lprc,format,lpdtp);
+    {
+        InstallerNativeCaptionScope installerCaption(hdc);
+        if(installerCaption.Active())return DrawTextExW_orig(hdc,lpchText,cchText,lprc,format,lpdtp);
+    }
+
+    if (IsRichEditDocumentDc(hdc))
+        return DrawTextExW_orig(hdc, lpchText, cchText, lprc, format, lpdtp);
     INT rebarResult = 0;
     const bool rebarDrawn = !lpdtp && TryDrawLegacyRebarText(hdc, lpchText, cchText, lprc,
         format, &rebarResult);
@@ -43458,6 +44583,14 @@ static BOOL WINAPI ExtTextOutW_hook_impl(HDC hdc, int x, int y, UINT options,
 BOOL WINAPI ExtTextOutW_hook(HDC hdc, int x, int y, UINT options,
     const RECT* lprect, LPCWSTR lpString, UINT c, const INT* lpDx)
 {
+    if(NativeIconLabelText(hdc))return ExtTextOutW_orig(hdc,x,y,options,lprect,lpString,c,lpDx);
+    {
+        InstallerNativeCaptionScope installerCaption(hdc);
+        if(installerCaption.Active())return ExtTextOutW_orig(hdc,x,y,options,lprect,lpString,c,lpDx);
+    }
+
+    if (IsRichEditDocumentDc(hdc))
+        return ExtTextOutW_orig(hdc, x, y, options, lprect, lpString, c, lpDx);
     COLORREF infoBarColor;
     if (c && t_explorerInfoBarPaint.hdc == hdc &&
         ExplorerInfoBarTextColor(hdc, {x, y}, &infoBarColor)) {
@@ -44513,17 +45646,578 @@ static bool IsCurrentProcessRegedit()
     return val == 1;
 }
 
-// Whole-subsystem gate for every dark/light decision below. Regedit is
-// always a single top-level process, so exclusion here always means "this
-// process" -- no per-hwnd/file-picker narrowing needed like the shared
-// hooks elsewhere. RegeditSection has its own complete light-mode
-// rendering at every call site, so this safely routes an excluded
-// regedit.exe through it instead of leaving anything half-applied.
+// Experimental own-process presentation controller for newly created native dialogs.
+// Stable Win32 paint/layout is evidence, not a universal async-content signal.
+enum class GateResult { Inactive, Waiting, Revealed, TimedOut, Disowned, Restored };
+static constexpr wchar_t kPresentationGateOwner[]=L"W32M.PendingPresentation";
+struct PresentationGate {
+ HWND window=nullptr;
+ bool ownsLayer=false,shown=false,painted=false,haveFingerprint=false,ticking=false;
+ ULONGLONG started=0,lastChange=0;
+ unsigned long long fingerprint=0;
+ unsigned quietSamples=0;
+ GateResult result=GateResult::Inactive;
+ bool OwnsZeroAlpha()const{
+  BYTE alpha=255;DWORD flags=0;COLORREF color=0;
+  return IsWindow(window)&&GetPropW(window,kPresentationGateOwner)==this&&(GetWindowLongPtrW(window,GWL_EXSTYLE)&WS_EX_LAYERED)&&
+   GetLayeredWindowAttributes(window,&color,&alpha,&flags)&&alpha==0&&color==0&&flags==LWA_ALPHA;
+ }
+ bool Arm(HWND w){
+  if(result!=GateResult::Inactive||ownsLayer||!w||GetPropW(w,kPresentationGateOwner)||GetWindowThreadProcessId(w,nullptr)!=GetCurrentThreadId()||IsWindowVisible(w))return false;
+  const LONG_PTR style=GetWindowLongPtrW(w,GWL_STYLE),ex=GetWindowLongPtrW(w,GWL_EXSTYLE);
+  if((style&WS_CHILD)||(ex&(WS_EX_LAYERED|WS_EX_NOREDIRECTIONBITMAP)))return false;
+  window=w;SetLastError(0);
+  if(!SetWindowLongPtrW(w,GWL_EXSTYLE,ex|WS_EX_LAYERED)&&GetLastError())return false;
+  if(!SetLayeredWindowAttributes(w,0,0,LWA_ALPHA)||!SetPropW(w,kPresentationGateOwner,this)){
+   SetWindowLongPtrW(w,GWL_EXSTYLE,GetWindowLongPtrW(w,GWL_EXSTYLE)&~static_cast<LONG_PTR>(WS_EX_LAYERED));return false;
+  }
+  ownsLayer=true;result=GateResult::Waiting;return true;
+ }
+ void Shown(ULONGLONG now){if(ownsLayer&&!shown){shown=true;started=lastChange=now;}}
+ void Painted(){painted=true;}
+ struct Snapshot { unsigned long long hash=1469598103934665603ull;bool dirty=false; };
+ static void Mix(Snapshot& s,ULONGLONG value){s.hash=(s.hash^value)*1099511628211ull;}
+ static BOOL CALLBACK Child(HWND w,LPARAM value){
+  auto& sample=*reinterpret_cast<Snapshot*>(value);RECT r{};GetWindowRect(w,&r);
+  Mix(sample,reinterpret_cast<UINT_PTR>(w));for(LONG n:{r.left,r.top,r.right,r.bottom})Mix(sample,static_cast<DWORD>(n));
+  Mix(sample,IsWindowVisible(w)!=FALSE);
+  if(IsWindowVisible(w)&&GetUpdateRect(w,nullptr,FALSE))sample.dirty=true;
+  return TRUE;
+ }
+ Snapshot Sample()const{
+  Snapshot sample;RECT r{};GetWindowRect(window,&r);
+  for(LONG n:{r.left,r.top,r.right,r.bottom})Mix(sample,static_cast<DWORD>(n));
+  sample.dirty=GetUpdateRect(window,nullptr,FALSE)!=FALSE;
+  EnumChildWindows(window,Child,reinterpret_cast<LPARAM>(&sample));return sample;
+ }
+ GateResult Abandon(GateResult reason=GateResult::Disowned){
+  if(GetPropW(window,kPresentationGateOwner)==this)RemovePropW(window,kPresentationGateOwner);
+  ownsLayer=false;return result=reason;
+ }
+ GateResult Restore(GateResult reason){
+  if(!ownsLayer)return result;
+  if(!OwnsZeroAlpha())return Abandon();
+  // Clear only the bit we added. Preserve later unrelated application styles.
+  SetLastError(0);const LONG_PTR current=GetWindowLongPtrW(window,GWL_EXSTYLE);
+  if(!SetWindowLongPtrW(window,GWL_EXSTYLE,current&~static_cast<LONG_PTR>(WS_EX_LAYERED))&&GetLastError())return result;
+  RemovePropW(window,kPresentationGateOwner);ownsLayer=false;return result=reason;
+ }
+ GateResult Tick(ULONGLONG now){
+  if(ticking)return result;
+  struct Guard {bool& value;Guard(bool& v):value(v){value=true;}~Guard(){value=false;}} guard(ticking);
+  if(!ownsLayer||!shown)return result;
+  if(!OwnsZeroAlpha())return Restore(GateResult::Disowned);
+#ifdef REJECTED_GATE_EARLY
+  if(painted)return Restore(GateResult::Revealed);
+#endif
+  Snapshot sample=Sample();
+  if(!haveFingerprint||sample.hash!=fingerprint||sample.dirty){
+   fingerprint=sample.hash;haveFingerprint=true;lastChange=now;quietSamples=0;
+  }
+  if(painted&&!sample.dirty&&now-lastChange>=120){
+   if(++quietSamples>=2){
+    // Finish native paints under zero opacity, then remeasure. A final flush
+    // which creates/moves children must restart the observation interval.
+    RedrawWindow(window,nullptr,nullptr,RDW_UPDATENOW|RDW_ALLCHILDREN|RDW_FRAME|RDW_INVALIDATE);
+    GdiFlush();if(!ownsLayer)return result;Snapshot final=Sample();
+    if(final.hash==fingerprint&&!final.dirty)return Restore(GateResult::Revealed);
+    fingerprint=final.hash;lastChange=now;quietSamples=0;
+   }
+  }
+  // Failure recovery, never an acceptance pass: don't strand an invisible UI.
+  if(now-started>=1500)return Restore(GateResult::TimedOut);
+  return result;
+ }
+};
+
+struct DialogPresentationContext {
+ HWND window=nullptr;
+ PresentationGate gate;
+ std::atomic<bool> applicationOpacity{false};
+ bool attempted=false,retiring=false;
+ ULONGLONG revealedAt=0;
+ UINT_PTR timer()const{return reinterpret_cast<UINT_PTR>(this);}
+};
+static std::mutex g_dialogPresentationMutex;
+static std::unordered_map<HWND,std::shared_ptr<DialogPresentationContext>> g_dialogPresentations;
+static std::atomic<bool> g_dialogPresentationUnloading{false};
+static thread_local bool t_dialogPresentationOpacity=false;
+static decltype(&SetLayeredWindowAttributes) DialogPresentationSetAlpha_orig=nullptr;
+static UINT DialogPresentationRestoreMessage(){static UINT value=RegisterWindowMessageW(L"W32M.RestoreDialogPresentation");return value;}
+static bool DialogPresentationEnabled(){
+ return g_settings.GeneralSection&&g_settings.DisableWindowOpeningAnimations&&
+  IsCustomDarkModeAllowed()&&!SysHighContrastEnabled()&&DialogPresentationSetAlpha_orig&&
+  !g_dialogPresentationUnloading.load(std::memory_order_acquire);
+}
+static std::shared_ptr<DialogPresentationContext> DialogPresentationFind(HWND w){
+ std::lock_guard<std::mutex> lock(g_dialogPresentationMutex);auto found=g_dialogPresentations.find(w);
+ return found==g_dialogPresentations.end()?nullptr:found->second;
+}
+static LRESULT CALLBACK DialogPresentationSubclass(HWND,UINT,WPARAM,LPARAM,DWORD_PTR);
+static void DialogPresentationRetire(const std::shared_ptr<DialogPresentationContext>& state,bool destroyed=false){
+ if(state->retiring)return;state->retiring=true;KillTimer(state->window,state->timer());
+ if(destroyed)state->gate.Abandon(GateResult::Restored);
+ else if(state->applicationOpacity.load(std::memory_order_acquire))state->gate.Abandon();
+ else state->gate.Restore(GateResult::Restored);
+ WindhawkUtils::RemoveWindowSubclassFromAnyThread(state->window,DialogPresentationSubclass);
+ std::lock_guard<std::mutex> lock(g_dialogPresentationMutex);auto found=g_dialogPresentations.find(state->window);
+ if(found!=g_dialogPresentations.end()&&found->second==state)g_dialogPresentations.erase(found);
+}
+static BOOL WINAPI DialogPresentationSetAlpha_hook(HWND w,COLORREF color,BYTE alpha,DWORD flags){
+ BOOL result=DialogPresentationSetAlpha_orig(w,color,alpha,flags);
+ if(result&&!t_dialogPresentationOpacity){auto state=DialogPresentationFind(w);if(state)state->applicationOpacity.store(true,std::memory_order_release);}
+ return result;
+}
+static bool DialogPresentationHoldTransitions(HWND w){
+ auto state=DialogPresentationFind(w);if(!state||state->retiring||!DialogPresentationEnabled())return false;
+ return state->gate.ownsLayer||(state->revealedAt&&GetTickCount64()-state->revealedAt<80);
+}
+static LRESULT CALLBACK DialogPresentationSubclass(HWND w,UINT message,WPARAM wp,LPARAM lp,DWORD_PTR){
+ auto state=DialogPresentationFind(w);if(!state)return DefSubclassProc(w,message,wp,lp);
+ if(message==DialogPresentationRestoreMessage()){
+  if(lp&&reinterpret_cast<DialogPresentationContext*>(lp)!=state.get())return 0;
+  DialogPresentationRetire(state);return 1;
+ }
+ const bool close=message==WM_CLOSE||message==WM_DESTROY||
+  (message==WM_SYSCOMMAND&&(wp&0xfff0)==SC_CLOSE);
+ if(message==WM_NCDESTROY){DialogPresentationRetire(state,true);return DefSubclassProc(w,message,wp,lp);}
+ if(close||!DialogPresentationEnabled()||state->applicationOpacity.load(std::memory_order_acquire)){
+  DialogPresentationRetire(state);return DefSubclassProc(w,message,wp,lp);
+ }
+ if(message==WM_TIMER&&wp==state->timer()){
+  if(state->revealedAt){if(GetTickCount64()-state->revealedAt>=80)DialogPresentationRetire(state);return 0;}
+  const GateResult result=state->gate.Tick(GetTickCount64());
+  if(result==GateResult::Revealed)state->revealedAt=GetTickCount64();
+  else if(result==GateResult::TimedOut||result==GateResult::Disowned)DialogPresentationRetire(state);
+  return 0;
+ }
+ if(message==WM_SHOWWINDOW){
+     if(wp)state->gate.Shown(GetTickCount64());
+     else if(state->gate.shown){
+         DialogPresentationRetire(state);
+         return DefSubclassProc(w,message,wp,lp);
+     }
+ }
+ if(message==WM_WINDOWPOSCHANGING&&lp){auto position=reinterpret_cast<const WINDOWPOS*>(lp);
+  if(position->flags&SWP_SHOWWINDOW)state->gate.Shown(GetTickCount64());
+  if((position->flags&SWP_HIDEWINDOW)&&state->gate.shown){DialogPresentationRetire(state);return DefSubclassProc(w,message,wp,lp);}
+ }
+ const LRESULT result=DefSubclassProc(w,message,wp,lp);
+ if(state->retiring)return result;
+ if((message==WM_CREATE||message==WM_INITDIALOG)&&!state->attempted){
+  state->attempted=true;const bool prior=t_dialogPresentationOpacity;t_dialogPresentationOpacity=true;
+  const bool armed=state->gate.Arm(w);t_dialogPresentationOpacity=prior;
+  if(!armed||!SetTimer(w,state->timer(),16,nullptr))DialogPresentationRetire(state);
+ }
+ if(message==WM_PAINT)state->gate.Painted();return result;
+}
+static void DialogPresentationObserveNewWindow(HWND w,const CREATESTRUCTW* creation){
+ if(!DialogPresentationEnabled()||!creation||(creation->style&WS_CHILD)||
+  creation->hwndParent==HWND_MESSAGE||!IsClassName(w,L"#32770"))return;
+ auto state=std::make_shared<DialogPresentationContext>();state->window=w;
+ {std::lock_guard<std::mutex> lock(g_dialogPresentationMutex);
+  if(g_dialogPresentations.size()>=256||g_dialogPresentations.count(w))return;g_dialogPresentations.emplace(w,state);}
+ if(!WindhawkUtils::SetWindowSubclassFromAnyThread(w,DialogPresentationSubclass,0)){
+  std::lock_guard<std::mutex> lock(g_dialogPresentationMutex);g_dialogPresentations.erase(w);
+ }else if(!DialogPresentationEnabled())DialogPresentationRetire(state);
+}
+static void DialogPresentationsRestoreAll(bool unloading){
+ if(unloading)g_dialogPresentationUnloading.store(true,std::memory_order_release);
+ std::vector<std::shared_ptr<DialogPresentationContext>> states;
+ {std::lock_guard<std::mutex> lock(g_dialogPresentationMutex);for(const auto& item:g_dialogPresentations)states.push_back(item.second);}
+ for(const auto& state:states){
+  if(GetWindowThreadProcessId(state->window,nullptr)==GetCurrentThreadId())DialogPresentationRetire(state);
+  else{
+   DWORD_PTR restored=0;
+   if(!SendMessageTimeoutW(state->window,DialogPresentationRestoreMessage(),0,reinterpret_cast<LPARAM>(state.get()),SMTO_ABORTIFHUNG|SMTO_BLOCK,1000,&restored)||!restored){
+    // A blocked UI thread cannot run restoration. Make only our still-owned
+    // alpha-zero surface opaque so unloading cannot strand an invisible UI.
+    // Native style restoration is unverified on this failure path.
+    BYTE alpha=255;DWORD flags=0;COLORREF color=0;
+    if(!state->applicationOpacity.load(std::memory_order_acquire)&&GetPropW(state->window,kPresentationGateOwner)==&state->gate&&
+       GetLayeredWindowAttributes(state->window,&color,&alpha,&flags)&&alpha==0&&flags==LWA_ALPHA){
+     const bool prior=t_dialogPresentationOpacity;t_dialogPresentationOpacity=true;
+     DialogPresentationSetAlpha_orig(state->window,0,255,LWA_ALPHA);t_dialogPresentationOpacity=prior;
+    }
+    if(GetPropW(state->window,kPresentationGateOwner)==&state->gate)RemovePropW(state->window,kPresentationGateOwner);
+    Wh_Log(L"Dialog presentation: UI restoration timed out; native style restoration not verified");
+    if(unloading)WindhawkUtils::RemoveWindowSubclassFromAnyThread(state->window,DialogPresentationSubclass);
+   }
+  }
+ }
+ if(unloading){std::lock_guard<std::mutex> lock(g_dialogPresentationMutex);g_dialogPresentations.clear();}
+}
+
+// DWM exposes no getter for TRANSITIONS_FORCEDISABLED. Observe each fresh
+// window before application initialization and retain its later assignments.
+// Never guess the prior attribute of an already existing window.
+// Reference the canonical hook's trampoline storage rather than keeping a
+// second independently registered detour/original pointer. Engine chain updates
+// are observed by both policy paths through the same live pointer.
+static decltype(&DwmSetWindowAttribute)& OpeningDwmSetAttribute_orig=DwmSetWindowAttribute_orig;
+struct OpeningTransitionState {
+    HWND window;
+    std::recursive_mutex assignmentMutex;
+    std::atomic<bool> requested{false}, owned{false}, painted{false}, hidden{true};
+    std::atomic<ULONGLONG> started{0};
+    UINT_PTR timer()const{return reinterpret_cast<UINT_PTR>(this);}
+};
+static std::mutex g_openingTransitionsMutex;
+static std::unordered_map<HWND,std::shared_ptr<OpeningTransitionState>> g_openingTransitions;
+static std::atomic<bool> g_openingTransitionsUnloading{false};
+static std::shared_ptr<OpeningTransitionState> OpeningTransitionFind(HWND window){
+    std::lock_guard<std::mutex> lock(g_openingTransitionsMutex);
+    auto it=g_openingTransitions.find(window);
+    return it==g_openingTransitions.end()?nullptr:it->second;
+}
+static void OpeningTransitionRelease(const std::shared_ptr<OpeningTransitionState>& state){
+    std::lock_guard<std::recursive_mutex> lock(state->assignmentMutex);
+    KillTimer(state->window,state->timer());
+    if(state->owned.exchange(false) && OpeningDwmSetAttribute_orig){
+        BOOL requested=state->requested.load();
+        OpeningDwmSetAttribute_orig(state->window,DWMWA_TRANSITIONS_FORCEDISABLED,
+            &requested,sizeof(requested));
+        const BOOL latest=state->requested.load();
+        if(latest!=requested)OpeningDwmSetAttribute_orig(state->window,
+            DWMWA_TRANSITIONS_FORCEDISABLED,&latest,sizeof(latest));
+    }
+}
+static bool OpeningTransitionEnabled(){
+    return g_settings.DisableWindowOpeningAnimations &&
+        !g_openingTransitionsUnloading.load(std::memory_order_acquire);
+}
+static void OpeningTransitionArm(const std::shared_ptr<OpeningTransitionState>& state){
+    std::lock_guard<std::recursive_mutex> lock(state->assignmentMutex);
+    if(!OpeningTransitionEnabled() || state->owned || !OpeningDwmSetAttribute_orig)return;
+    BOOL disabled=TRUE;
+    if(FAILED(OpeningDwmSetAttribute_orig(state->window,DWMWA_TRANSITIONS_FORCEDISABLED,
+            &disabled,sizeof(disabled))))return;
+    state->owned=true;state->painted=false;state->started=0;
+    if(!OpeningTransitionEnabled())OpeningTransitionRelease(state);
+}
+static void OpeningTransitionStart(const std::shared_ptr<OpeningTransitionState>& state){
+    std::lock_guard<std::recursive_mutex> lock(state->assignmentMutex);
+    OpeningTransitionArm(state);
+    if(!state->owned)return;
+    state->painted=false;state->started=GetTickCount64();
+    if(!SetTimer(state->window,state->timer(),16,nullptr) || !OpeningTransitionEnabled())
+        OpeningTransitionRelease(state);
+}
+static HRESULT WINAPI OpeningDwmSetAttribute_hook(HWND window,DWORD attribute,
+    LPCVOID value,DWORD size){
+    if(attribute==35 || attribute==36)return ConsistentCaptionDwmSet(window,attribute,value,size);
+    if(attribute!=DWMWA_TRANSITIONS_FORCEDISABLED || !value || size!=sizeof(BOOL))
+        return OpeningDwmSetAttribute_orig(window,attribute,value,size);
+    auto state=OpeningTransitionFind(window);
+    if(!state)return OpeningDwmSetAttribute_orig(window,attribute,value,size);
+    std::lock_guard<std::recursive_mutex> lock(state->assignmentMutex);
+    const BOOL requested=*static_cast<const BOOL*>(value);
+    const bool previous=state->requested.exchange(requested!=FALSE);
+    BOOL applied=state->owned && OpeningTransitionEnabled()?TRUE:requested;
+    HRESULT result=OpeningDwmSetAttribute_orig(window,attribute,&applied,sizeof(applied));
+    if(FAILED(result)){
+        bool expected=requested!=FALSE;
+        state->requested.compare_exchange_strong(expected,previous);
+    }else{
+        const BOOL desired=state->owned && OpeningTransitionEnabled()
+            ? TRUE:static_cast<BOOL>(state->requested.load());
+        if(desired!=applied)OpeningDwmSetAttribute_orig(window,attribute,&desired,sizeof(desired));
+    }
+    return result;
+}
+static LRESULT CALLBACK OpeningTransitionSubclass(HWND window,UINT message,
+    WPARAM wp,LPARAM lp,DWORD_PTR){
+    auto state=OpeningTransitionFind(window);
+    if(!state)return DefSubclassProc(window,message,wp,lp);
+    if(message==WM_CLOSE || message==WM_DESTROY ||
+        (message==WM_SYSCOMMAND && (wp&0xFFF0)==SC_CLOSE))
+        OpeningTransitionRelease(state); // Restore BEFORE native closing logic.
+    if(message==WM_SHOWWINDOW){
+        if(wp){if(state->hidden.exchange(false))OpeningTransitionStart(state);}
+        else{state->hidden=true;OpeningTransitionRelease(state);}
+    }
+    if(message==WM_WINDOWPOSCHANGING && lp){
+        auto position=reinterpret_cast<const WINDOWPOS*>(lp);
+        if((position->flags&SWP_SHOWWINDOW) && state->hidden.exchange(false))
+            OpeningTransitionStart(state);
+        if(position->flags&SWP_HIDEWINDOW){state->hidden=true;OpeningTransitionRelease(state);}
+    }
+    if(message==WM_TIMER && wp==state->timer()){
+        if(DialogPresentationHoldTransitions(window))return 0;
+        const ULONGLONG elapsed=GetTickCount64()-state->started.load();
+        if(!OpeningTransitionEnabled() || (state->painted && elapsed>=64) || elapsed>=500)
+            OpeningTransitionRelease(state);
+        return 0;
+    }
+    // HCBT_CREATEWND precedes a usable DWM handle on some Windows builds.
+    // Retry as soon as native creation begins, before application handlers can
+    // request their first show; retain the post-handler retry for transient failure.
+    if(message==WM_NCCREATE || message==WM_CREATE)OpeningTransitionArm(state);
+    LRESULT result=DefSubclassProc(window,message,wp,lp);
+    if(message==WM_NCCREATE || message==WM_CREATE)OpeningTransitionArm(state);
+    if(message==WM_PAINT && state->owned)state->painted=true;
+    if(message==WM_NCDESTROY){
+        OpeningTransitionRelease(state);
+        {std::lock_guard<std::mutex> lock(g_openingTransitionsMutex);g_openingTransitions.erase(window);}
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(window,OpeningTransitionSubclass);
+    }
+    return result;
+}
+static void OpeningTransitionObserveNewWindow(HWND window,const CREATESTRUCTW* creation){
+    if(!OpeningTransitionEnabled() || !creation || (creation->style&WS_CHILD) ||
+        creation->hwndParent==HWND_MESSAGE)return;
+    const bool dialog=IsClassName(window,L"#32770");
+    const bool regedit=IsCurrentProcessRegedit() && IsClassName(window,L"RegEdit_RegEdit");
+    const bool installer=g_settings.InstallerUi && (IsClassName(window,L"TWizardForm") ||
+        IsClassName(window,L"TUninstallProgressForm") || IsClassName(window,L"WixStdBA"));
+    // Broader coverage is opt-in and only owns ordinary application frames.
+    // Auxiliary popups/control animations remain native unless explicitly enrolled.
+    const bool applicationFrame=g_settings.OpeningAnimationAllApplications &&
+        (((creation->style&WS_CAPTION)==WS_CAPTION) || (creation->style&WS_THICKFRAME)) &&
+        !(creation->dwExStyle&(WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE));
+    if(!dialog && !regedit && !installer && !g_settings.OpeningAnimationProcessTarget &&
+       !applicationFrame)return;
+    auto state=std::make_shared<OpeningTransitionState>();state->window=window;
+    {std::lock_guard<std::mutex> lock(g_openingTransitionsMutex);
+        if(g_openingTransitions.size()>=256 || g_openingTransitions.count(window))return;
+        g_openingTransitions.emplace(window,state);}
+    if(!WindhawkUtils::SetWindowSubclassFromAnyThread(window,OpeningTransitionSubclass,0)){
+        std::lock_guard<std::mutex> lock(g_openingTransitionsMutex);g_openingTransitions.erase(window);
+    }else if(g_openingTransitionsUnloading.load(std::memory_order_acquire)){
+        OpeningTransitionRelease(state);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(window,OpeningTransitionSubclass);
+        std::lock_guard<std::mutex> lock(g_openingTransitionsMutex);g_openingTransitions.erase(window);
+    }else{
+        // Pre-arm before native creation; start the deadline only on show.
+        OpeningTransitionArm(state);
+    }
+}
+static void OpeningTransitionsRestoreAll(bool unloading){
+    if(unloading)g_openingTransitionsUnloading.store(true,std::memory_order_release);
+    std::vector<std::shared_ptr<OpeningTransitionState>> states;
+    {std::lock_guard<std::mutex> lock(g_openingTransitionsMutex);
+        for(const auto& [window,state]:g_openingTransitions)states.push_back(state);
+        if(unloading)g_openingTransitions.clear();}
+    for(const auto& state:states){
+        OpeningTransitionRelease(state);
+        if(unloading)WindhawkUtils::RemoveWindowSubclassFromAnyThread(
+            state->window,OpeningTransitionSubclass);
+    }
+}
+
+
+
+
+static decltype(&ShowWindow) OpeningShowWindow_orig=nullptr;
+static decltype(&ShowWindowAsync) OpeningShowWindowAsync_orig=nullptr;
+static decltype(&SetWindowPos) OpeningSetWindowPos_orig=nullptr;
+static decltype(&AnimateWindow) OpeningAnimateWindow_orig=nullptr;
+static void OpeningPrepareNativeShow(HWND window,bool show,bool hide){
+    if(!show && !hide)return;
+    auto state=OpeningTransitionFind(window);if(!state)return;
+    if(hide)OpeningTransitionRelease(state);
+    else if(OpeningTransitionEnabled() && !IsWindowVisible(window))
+        OpeningTransitionArm(state);
+}
+static bool OpeningShowCommand(int command){
+    return command!=SW_HIDE && command!=SW_MINIMIZE &&
+        command!=SW_SHOWMINIMIZED && command!=SW_SHOWMINNOACTIVE &&
+        command!=SW_FORCEMINIMIZE;
+}
+static BOOL WINAPI OpeningShowWindow_hook(HWND window,int command){
+    const DWORD incomingError=GetLastError();
+    OpeningPrepareNativeShow(window,OpeningShowCommand(command),command==SW_HIDE);
+    SetLastError(incomingError);
+    return OpeningShowWindow_orig(window,command);
+}
+static BOOL WINAPI OpeningShowWindowAsync_hook(HWND window,int command){
+    const DWORD incomingError=GetLastError();
+    OpeningPrepareNativeShow(window,OpeningShowCommand(command),command==SW_HIDE);
+    SetLastError(incomingError);
+    return OpeningShowWindowAsync_orig(window,command);
+}
+static BOOL WINAPI OpeningSetWindowPos_hook(HWND window,HWND after,int x,int y,int cx,int cy,UINT flags){
+    const DWORD incomingError=GetLastError();
+    OpeningPrepareNativeShow(window,(flags&SWP_SHOWWINDOW)!=0,(flags&SWP_HIDEWINDOW)!=0);
+    SetLastError(incomingError);
+    return OpeningSetWindowPos_orig(window,after,x,y,cx,cy,flags);
+}
+static BOOL WINAPI OpeningAnimateWindow_hook(HWND window,DWORD duration,DWORD flags){
+    const DWORD incomingError=GetLastError();
+    if(flags&AW_HIDE)OpeningPrepareNativeShow(window,false,true);
+    if(!(flags&AW_HIDE) && OpeningTransitionEnabled() &&
+        !IsWindowVisible(window) && OpeningTransitionFind(window)){
+        OpeningPrepareNativeShow(window,true,false);
+        ShowWindow(window,(flags&AW_ACTIVATE)?SW_SHOW:SW_SHOWNOACTIVATE);
+        return IsWindowVisible(window);
+    }
+    SetLastError(incomingError);
+    return OpeningAnimateWindow_orig(window,duration,flags);
+}
+
 static bool RgIsDarkMode()
 {
     // A contrast theme brings its own colors, as ShouldCustomDarkModeBeActive.
     return !g_darkModeExcluded.load(std::memory_order_acquire) && IsSystemDarkMode() &&
         !g_roundedSelectionHighContrast.load(std::memory_order_acquire);
+}
+
+// CAPTION_COLOR/TEXT_COLOR are setter attributes on current Windows builds.
+// An observed new lifetime starts at documented COLOR_DEFAULT. Existing
+// unknown windows are never assigned a guessed restoration baseline.
+struct ConsistentCaptionSlot {
+    bool known=false,owned=false,superseded=false;
+    const void* caller=nullptr;
+    COLORREF requested=0xFFFFFFFF,assigned=0xFFFFFFFF;
+    unsigned long long revision=0;
+};
+struct ConsistentCaptionState {
+    HWND window=nullptr;
+    std::recursive_mutex assignmentMutex;
+    bool retired=false;
+    ConsistentCaptionSlot colors[2];
+};
+static std::mutex g_consistentCaptionsMutex;
+static std::unordered_map<HWND,std::shared_ptr<ConsistentCaptionState>>g_consistentCaptions;
+static std::atomic<bool>g_consistentCaptionsUnloading{false};
+static constexpr wchar_t kConsistentCaptionOwner[]=L"W32M.CaptionColorOwner";
+static LRESULT CALLBACK ConsistentCaptionSubclass(HWND,UINT,WPARAM,LPARAM,DWORD_PTR);
+static std::shared_ptr<ConsistentCaptionState> ConsistentCaptionFind(HWND window){
+    std::lock_guard<std::mutex>lock(g_consistentCaptionsMutex);
+    auto i=g_consistentCaptions.find(window);
+    return i==g_consistentCaptions.end()?nullptr:i->second;
+}
+static std::shared_ptr<ConsistentCaptionState> ConsistentCaptionEnsure(HWND window,bool fresh){
+    if(auto existing=ConsistentCaptionFind(window))return existing;
+    if(g_consistentCaptionsUnloading.load(std::memory_order_acquire))return nullptr;
+    DWORD pid=0;GetWindowThreadProcessId(window,&pid);
+    if(pid!=GetCurrentProcessId()||GetAncestor(window,GA_ROOT)!=window)return nullptr;
+    auto state=std::make_shared<ConsistentCaptionState>();state->window=window;
+    state->colors[0].known=state->colors[1].known=fresh;
+    {
+        std::lock_guard<std::mutex>lock(g_consistentCaptionsMutex);
+        if(g_consistentCaptions.size()>=512)return nullptr;
+        auto result=g_consistentCaptions.emplace(window,state);
+        if(!result.second)return result.first->second;
+    }
+    if(!SetPropW(window,kConsistentCaptionOwner,state.get())||
+       !WindhawkUtils::SetWindowSubclassFromAnyThread(window,ConsistentCaptionSubclass,0)){
+        if(GetPropW(window,kConsistentCaptionOwner)==state.get())RemovePropW(window,kConsistentCaptionOwner);
+        std::lock_guard<std::mutex>lock(g_consistentCaptionsMutex);
+        auto i=g_consistentCaptions.find(window);if(i!=g_consistentCaptions.end()&&i->second==state)g_consistentCaptions.erase(i);
+        return nullptr;
+    }
+    return state;
+}
+static void ConsistentCaptionObserveNewWindow(HWND window,const CREATESTRUCTW* creation){
+    if(!creation||(creation->style&WS_CHILD)||creation->hwndParent==HWND_MESSAGE)return;
+    ConsistentCaptionEnsure(window,true);
+}
+static bool ConsistentCaptionStillOwned(const std::shared_ptr<ConsistentCaptionState>&state){
+    return !state->retired&&GetPropW(state->window,kConsistentCaptionOwner)==state.get();
+}
+static HRESULT ConsistentCaptionDwmSet(HWND window,DWORD attribute,LPCVOID value,DWORD size){
+    if((attribute!=35&&attribute!=36)||!value||size!=sizeof(COLORREF))
+        return OpeningDwmSetAttribute_orig(window,attribute,value,size);
+    auto state=ConsistentCaptionEnsure(window,false);
+    if(!state)return OpeningDwmSetAttribute_orig(window,attribute,value,size);
+    std::lock_guard<std::recursive_mutex>lock(state->assignmentMutex);
+    auto&slot=state->colors[attribute-35];const auto revision=slot.revision;
+    const HRESULT result=OpeningDwmSetAttribute_orig(window,attribute,value,size);
+    if(SUCCEEDED(result)&&ConsistentCaptionStillOwned(state)){
+        if(slot.revision!=revision){
+            // Nested successful writes have ambiguous native completion order.
+            // A later unambiguous application write can establish a new baseline.
+            slot.known=false;slot.owned=false;slot.superseded=true;++slot.revision;return result;
+        }
+        slot.requested=*static_cast<const COLORREF*>(value);slot.known=true;
+        // An application write is authoritative. Do not undo it on cleanup.
+        if(slot.owned)slot.superseded=true;
+        slot.owned=false;++slot.revision;
+    }
+    return result;
+}
+static constexpr unsigned char kConsistentCaptionGenericCaller=0;
+// A null caller is reserved for final global restoration. Every normal
+// assignment/release has an explicit internal owner, independently per color.
+static void ConsistentCaptionAttributeForOwner(HWND window,DWORD attribute,bool apply,COLORREF color,const void* caller){
+    if(attribute!=35&&attribute!=36)return;
+    auto state=ConsistentCaptionFind(window);if(!state||!OpeningDwmSetAttribute_orig)return;
+    std::lock_guard<std::recursive_mutex>lock(state->assignmentMutex);
+    if(!ConsistentCaptionStillOwned(state))return;
+    auto&slot=state->colors[attribute-35];
+    if(!caller&&apply)return;
+    if(caller&&slot.caller&&slot.caller!=caller)return;
+    if(!apply){
+        if(slot.owned&&slot.known){
+            const auto revision=slot.revision;
+            const HRESULT result=OpeningDwmSetAttribute_orig(window,attribute,&slot.requested,sizeof(slot.requested));
+            if(slot.revision!=revision){slot.known=false;slot.owned=false;slot.superseded=true;slot.caller=caller;return;}
+            if(SUCCEEDED(result))slot.owned=false;
+        }
+        if(!slot.owned){slot.superseded=false;slot.caller=nullptr;} // Only this owner's off cycle can reset it.
+        return;
+    }
+    if(!slot.known||slot.superseded||g_consistentCaptionsUnloading.load(std::memory_order_acquire))return;
+    if(slot.owned&&slot.assigned==color)return;
+    const auto revision=slot.revision;
+    const HRESULT result=OpeningDwmSetAttribute_orig(window,attribute,&color,sizeof(color));
+    if(slot.revision!=revision){slot.known=false;slot.owned=false;slot.superseded=true;slot.caller=caller;return;}
+    if(SUCCEEDED(result)&&ConsistentCaptionStillOwned(state)){slot.assigned=color;slot.owned=true;slot.caller=caller;}
+}
+static void ConsistentCaptionAttribute(HWND window,DWORD attribute,LPCWSTR,LPCWSTR,LPCWSTR,bool apply,COLORREF color){
+    ConsistentCaptionAttributeForOwner(window,attribute,apply,color,&kConsistentCaptionGenericCaller);
+}
+static LRESULT CALLBACK ConsistentCaptionSubclass(HWND window,UINT message,WPARAM wp,LPARAM lp,DWORD_PTR){
+    if(message==WM_NCDESTROY){
+        if(auto state=ConsistentCaptionFind(window)){
+            std::lock_guard<std::recursive_mutex>lock(state->assignmentMutex);state->retired=true;
+            if(GetPropW(window,kConsistentCaptionOwner)==state.get())RemovePropW(window,kConsistentCaptionOwner);
+            std::lock_guard<std::mutex>mapLock(g_consistentCaptionsMutex);
+            auto i=g_consistentCaptions.find(window);if(i!=g_consistentCaptions.end()&&i->second==state)g_consistentCaptions.erase(i);
+        }
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(window,ConsistentCaptionSubclass);
+    }
+    return DefSubclassProc(window,message,wp,lp);
+}
+static void ConsistentCaptionsRestoreAll(){
+    g_consistentCaptionsUnloading.store(true,std::memory_order_release);
+    std::vector<std::shared_ptr<ConsistentCaptionState>>states;
+    {std::lock_guard<std::mutex>lock(g_consistentCaptionsMutex);for(auto&entry:g_consistentCaptions)states.push_back(entry.second);}
+    for(auto&state:states){
+        ConsistentCaptionAttributeForOwner(state->window,35,false,0,nullptr);
+        ConsistentCaptionAttributeForOwner(state->window,36,false,0,nullptr);
+        {
+            std::lock_guard<std::recursive_mutex>lock(state->assignmentMutex);
+            if(GetPropW(state->window,kConsistentCaptionOwner)==state.get())RemovePropW(state->window,kConsistentCaptionOwner);
+            state->retired=true;
+        }
+        // This helper synchronously messages another UI thread. Do not hold
+        // either lock while waiting for an in-flight NCDESTROY callback.
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(state->window,ConsistentCaptionSubclass);
+    }
+    {std::lock_guard<std::mutex>lock(g_consistentCaptionsMutex);g_consistentCaptions.clear();}
+}
+
+static void ConsistentCaption(HWND hwnd, bool apply, COLORREF background)
+{
+    static thread_local bool updating = false;
+    if (updating) return;
+    updating = true;
+    ConsistentCaptionAttribute(hwnd, 35 /*DWMWA_CAPTION_COLOR*/,
+        L"WH_CC_BG_SAVED", L"WH_CC_BG_SET", L"WH_CC_BG_ACTIVE", apply, background);
+    ConsistentCaptionAttribute(hwnd, 36 /*DWMWA_TEXT_COLOR*/,
+        L"WH_CC_FG_SAVED", L"WH_CC_FG_SET", L"WH_CC_FG_ACTIVE", apply,
+        WinUI::Dark::TextFillColorPrimary);
+    updating = false;
+}
+
+static BOOL CALLBACK ConsistentCaptionRestoreEnum(HWND hwnd, LPARAM)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid == GetCurrentProcessId()) ConsistentCaption(hwnd, false, Win32MainDark);
+    return TRUE;
 }
 
 // ---------------------------------------------------------------------------
@@ -45318,6 +47012,8 @@ static void RgApplyBackdrop(HWND main, bool mica)
 {
     if (!main || !IsWindow(main))
         return;
+    ConsistentCaption(main, !mica && RgIsDarkMode() && g_settings.RegeditSection &&
+        !rg_unloading.load(std::memory_order_acquire), Win32MainDark);
     if (mica) {
         const BOOL darkAttr = RgIsDarkMode() ? TRUE : FALSE;
         DwmSetWindowAttribute(main, DWMWA_USE_IMMERSIVE_DARK_MODE,
@@ -46481,7 +48177,7 @@ static LRESULT CALLBACK RgMainSubclassProc(
         // regedit dark independent of the OS-wide setting, and the raw
         // system check disagreed with that, leaving a light menu bar in an
         // otherwise-dark regedit window (or vice versa).
-        const bool dark = IsHwndDarkMode(hwnd);
+        const bool dark = RgIsDarkMode();
         // Fixed per-window colors, not the hooked GetSysColor, which follows
         // the global mode. Light is WinUI's SolidBackgroundFillColorBase;
         // Mica: black reveals the backdrop behind the bar.
@@ -46514,7 +48210,7 @@ static LRESULT CALLBACK RgMainSubclassProc(
     case 0x0092: // WM_UAHDRAWMENUITEM
     {
         // Per-window, not IsSystemDarkMode -- see the WM_UAHDRAWMENU case above.
-        const bool dark = IsHwndDarkMode(hwnd);
+        const bool dark = RgIsDarkMode();
         // Same bar color as the WM_UAHDRAWMENU case above.
         const COLORREF barBg = RgMicaActive() ? RGB(0, 0, 0)
             : dark ? kRgDkMenuBk : WinUI::Light::SolidBackgroundFillColorBase.rgb;
@@ -47797,6 +49493,9 @@ static void RgRestoreBorderStyles(HWND hwnd)
 
 static void RgApplyMainStyle(HWND hwnd)
 {
+    // Theme, backdrop and frame updates below can synchronously erase a
+    // visible window. Own its background before requesting any of them.
+    WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, RgMainSubclassProc, 0);
     const bool dark = RgIsDarkMode();
 
     BOOL darkAttr = dark ? TRUE : FALSE;
@@ -47822,7 +49521,7 @@ static void RgApplyMainStyle(HWND hwnd)
     SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 
-    WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, RgMainSubclassProc, 0);
+
 }
 
 // Defined later in the file, alongside their Explorer-context call sites.
@@ -47839,6 +49538,11 @@ static void RgApplyTreeViewStyle(HWND hwnd)
 
     const bool dark = RgIsDarkMode();
 
+    // Background color for empty areas below the last item
+    COLORREF tvBk = g_settings.RgMicaBackdrop
+        ? RGB(0,0,0) : (dark ? kRgDkTVBk : kRgLtTVBk);
+    TreeView_SetBkColor(hwnd, tvBk);
+    TreeView_SetTextColor(hwnd, dark ? kRgDkTVText : kRgLtTVText);
     // DarkMode_Explorer makes scrollbars dark. Safe because CDRF_SKIPDEFAULT
     // overrides all item painting — the theme only affects scrollbars/NC area.
     if (dark) {
@@ -47853,11 +49557,7 @@ static void RgApplyTreeViewStyle(HWND hwnd)
         }
     }
 
-    // Background color for empty areas below the last item
-    COLORREF tvBk = g_settings.RgMicaBackdrop
-        ? RGB(0,0,0) : (dark ? kRgDkTVBk : kRgLtTVBk);
-    TreeView_SetBkColor(hwnd, tvBk);
-    TreeView_SetTextColor(hwnd, dark ? kRgDkTVText : kRgLtTVText);
+
 
     // Double-buffer eliminates horizontal scroll artifacts
     TreeView_SetExtendedStyle(hwnd, TVS_EX_DOUBLEBUFFER, TVS_EX_DOUBLEBUFFER);
@@ -47888,13 +49588,16 @@ static void RgApplyTreeViewStyle(HWND hwnd)
 
 static void RgApplyListViewStyle(HWND hwnd)
 {
+    WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, RgLVSubclassProc, 0);
     const bool dark = RgIsDarkMode();
-    RgRemoveBorderStyles(hwnd);
 
     const COLORREF bk = RgListBackground(dark);
     ListView_SetBkColor(hwnd, bk);
     ListView_SetTextBkColor(hwnd, bk);
     ListView_SetTextColor(hwnd, dark ? RGB(255, 255, 255) : RGB(0, 0, 0));
+
+    // Frame changes can synchronously paint; establish the palette first.
+    RgRemoveBorderStyles(hwnd);
 
     // Both modes need SetWindowTheme to get properly themed selection highlights
     // and scrollbars. Without it, light mode gets a simplified/classic look.
@@ -47908,7 +49611,6 @@ static void RgApplyListViewStyle(HWND hwnd)
         LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER,
         LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
-    WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, RgLVSubclassProc, 0);
     RgUpdateListViewRegion(hwnd);
 }
 
@@ -47998,8 +49700,12 @@ static bool TryApplyToWindow_Regedit(HWND hwnd)
         bool mine = false;
         { HWND expected = nullptr; mine = rg_hwndMain.compare_exchange_strong(expected, hwnd); }
         if (mine) {
-            RgApplyMainStyle(hwnd);
+            // Child controls are created inside the main window's native
+            // creation call, before this post-create hook learns its HWND.
+            // Prepare their dark surfaces before refreshing the main frame.
+            WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, RgMainSubclassProc, 0);
             EnumChildWindows(hwnd, RgEnumChildApplyProc, 0);
+            RgApplyMainStyle(hwnd);
             RECT rc;
             GetClientRect(hwnd, &rc);
             PostMessage(hwnd, WM_SIZE, SIZE_RESTORED, MAKELPARAM(rc.right, rc.bottom));
@@ -48335,6 +50041,7 @@ static void RgUninit(bool fullUnload)
         WindhawkUtils::RemoveWindowSubclassFromAnyThread(main, RgMainSubclassProc);
         if (IsWindow(main)) {
             RgApplyBackdrop(main, false);
+            ConsistentCaption(main, false, Win32MainDark);
             SetWindowTheme(main, nullptr, nullptr);
             if (g_cbdAllowDark) g_cbdAllowDark(main, false);
         }
@@ -49043,6 +50750,8 @@ static HBRUSH g_propertyDialogOriginalClassBrush = nullptr; // borrowed class br
 static bool g_propertyDialogOriginalClassBrushSaved = false;
 
 // Forward declarations
+
+
 static LRESULT CALLBACK PropertyDialogSubclassProc(
     HWND, UINT, WPARAM, LPARAM, DWORD_PTR);
 static void FilePickerBottomRule(HWND dialog, HDC hdc);
@@ -49081,8 +50790,10 @@ static bool IsClassicPlacesBarToolbar(HWND hwndFrom)
 // mod's hook once the dialog procedure declines). Such a dialog paints its
 // own background, so it keeps it in dark mode. Not applied inside
 // explorer.exe, whose property sheets are the mod's own dark surfaces.
-static bool IsAppOwnedCtlColorBrush(HBRUSH br)
+static bool IsAppOwnedCtlColorBrush(HBRUSH br, HWND owner)
 {
+    if (InstallerReplaceBrush(owner, br))
+        return false;
     if (IsCurrentProcessExplorer())
         return false;
     if (!br || reinterpret_cast<ULONG_PTR>(br) <= 31)
@@ -49113,7 +50824,7 @@ static HBRUSH AppOwnedDialogBrush(HWND hwnd, HDC hdc)
     SetBkColor(hdc, savedBk);
     SetTextColor(hdc, savedText);
     SetBkMode(hdc, savedMode);
-    return IsAppOwnedCtlColorBrush(br) ? br : nullptr;
+    return IsAppOwnedCtlColorBrush(br, hwnd) ? br : nullptr;
 }
 
 // The ContentDialog colors PaintTaskDialogPanel gives the two panels.
@@ -49154,9 +50865,805 @@ static HBRUSH TaskDialogBandCtlColor(HWND dialog, HWND control, HDC hdc)
     return br;
 }
 
+// Classic common dialogs can present their controls' native white erase before
+// their themed first paint. Give those standard chrome surfaces a dark backing
+// without hiding the dialog, changing its opacity, or replacing native painting.
+// Match the shell view plus both standard combo IDs, not arbitrary application
+// dialogs. Modern pickers require the DirectUI host plus namespace tree;
+// their native file-name controls need the same early dark backing. Their
+// Host erase backing leaves DirectUI content painting and authored RichEdit untouched.
+static constexpr wchar_t kClassicPickerEraseMarker[] = L"W32M.ClassicPickerErase";
+static std::mutex g_classicPickerEraseMutex;
+static std::unordered_set<HWND> g_classicPickerEraseOwners;
+static std::atomic<bool> g_classicPickerEraseUnloading{false};
+
+static HWND ClassicPickerEraseRoot(HWND hwnd)
+{
+    HWND root = hwnd ? GetAncestor(hwnd, GA_ROOT) : nullptr;
+    if (root && FilePickerDialogRoot(hwnd)) return root;
+    if (!root || !IsClassName(root, L"#32770") ||
+        FindWindowExW(root, nullptr, L"DUIViewWndClassName", nullptr) ||
+        !IsClassName(GetDlgItem(root, 1121), L"SHELLDLL_DefView") ||
+        !IsClassName(GetDlgItem(root, 1136), L"ComboBox") ||
+        !IsClassName(GetDlgItem(root, 1137), L"ComboBox"))
+        return nullptr;
+    return root;
+}
+
+static LRESULT CALLBACK ClassicPickerEraseSubclass(
+    HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, DWORD_PTR)
+{
+    if (msg == WM_NCDESTROY) {
+        {
+            std::lock_guard<std::mutex> lock(g_classicPickerEraseMutex);
+            g_classicPickerEraseOwners.erase(hwnd);
+        }
+        RemovePropW(hwnd, kClassicPickerEraseMarker);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, ClassicPickerEraseSubclass);
+    } else if (msg == WM_ERASEBKGND && wp && g_darkModeActive &&
+               !g_classicPickerEraseUnloading.load(std::memory_order_acquire) &&
+               IsCustomDarkModeAllowed() && ClassicPickerEraseRoot(hwnd)) {
+        RECT rc{};
+        if (GetClientRect(hwnd, &rc)) {
+            if (HBRUSH brush = GetCachedSolidBrush(Win32MainDark)) {
+                FillRect_orig(reinterpret_cast<HDC>(wp), &rc, brush);
+                return TRUE;
+            }
+        }
+    }
+    return DefSubclassProc(hwnd, msg, wp, lp);
+}
+
+static BOOL CALLBACK ClassicPickerEraseObserveChild(HWND hwnd, LPARAM)
+{
+    if (g_classicPickerEraseUnloading.load(std::memory_order_acquire) ||
+        GetPropW(hwnd, kClassicPickerEraseMarker))
+        return TRUE;
+    wchar_t cls[64]{};
+    GetClassNameW(hwnd, cls, ARRAYSIZE(cls));
+    bool standard = false;
+    for (LPCWSTR name : { L"Static", L"ComboBox", L"ComboBoxEx32", L"Edit",
+                         L"Button", L"ToolbarWindow32", L"SysHeader32",
+                         L"ListBox", L"ScrollBar", L"SHELLDLL_DefView",
+                         L"SysListView32", L"DUIViewWndClassName", L"DirectUIHWND" }) {
+        if (_wcsicmp(cls, name) == 0) { standard = true; break; }
+    }
+    if (!standard || !ClassicPickerEraseRoot(hwnd))
+        return TRUE;
+    if (!WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, ClassicPickerEraseSubclass, 0))
+        return TRUE;
+    if (!SetPropW(hwnd, kClassicPickerEraseMarker, reinterpret_cast<HANDLE>(1))) {
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, ClassicPickerEraseSubclass);
+        return TRUE;
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_classicPickerEraseMutex);
+        g_classicPickerEraseOwners.insert(hwnd);
+    }
+    // Close the race with the one-shot unload sweep without holding the mutex
+    // across any cross-thread subclass operation.
+    if (g_classicPickerEraseUnloading.load(std::memory_order_acquire)) {
+        {
+            std::lock_guard<std::mutex> lock(g_classicPickerEraseMutex);
+            g_classicPickerEraseOwners.erase(hwnd);
+        }
+        RemovePropW(hwnd, kClassicPickerEraseMarker);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, ClassicPickerEraseSubclass);
+    }
+    return TRUE;
+}
+
+static void ClassicPickerEraseRemoveAll()
+{
+    g_classicPickerEraseUnloading.store(true, std::memory_order_release);
+    std::vector<HWND> controls;
+    {
+        std::lock_guard<std::mutex> lock(g_classicPickerEraseMutex);
+        controls.assign(g_classicPickerEraseOwners.begin(), g_classicPickerEraseOwners.end());
+        g_classicPickerEraseOwners.clear();
+    }
+    for (HWND hwnd : controls) {
+        if (!IsWindow(hwnd)) continue;
+        RemovePropW(hwnd, kClassicPickerEraseMarker);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, ClassicPickerEraseSubclass);
+    }
+}
+
+
+
+
+// Separate internal owner identity: generic menu/installer caption refreshes
+// must not restore picker assignments, or vice versa. No extra HWND marker or
+// lifetime map is needed; the caption owner owns those already.
+static constexpr unsigned char kFilePickerCaptionCaller = 0;
+static void FilePickerCaptionRefresh(HWND hwnd, UINT message)
+{
+    if (message != WM_SHOWWINDOW && message != WM_WINDOWPOSCHANGING &&
+        message != WM_PAINT && message != WM_ACTIVATE &&
+        message != WM_THEMECHANGED && message != WM_SETTINGCHANGE &&
+        message != WM_NCDESTROY)
+        return;
+    const bool apply = message != WM_NCDESTROY &&
+        ClassicPickerEraseRoot(hwnd) == hwnd && g_darkModeActive &&
+        IsCustomDarkModeAllowed() &&
+        !g_darkModeUnloading.load(std::memory_order_acquire);
+    ConsistentCaptionAttributeForOwner(hwnd, 35, apply,
+        FilePickerControlBackground(true), &kFilePickerCaptionCaller);
+    ConsistentCaptionAttributeForOwner(hwnd, 36, apply,
+        WinUI::Dark::TextFillColorPrimary, &kFilePickerCaptionCaller);
+}
+
+// Native property sheets use a uniform dark surface. The optional custom
+// WinUI tab mode retains its separate raised pane palette.
+static COLORREF PropertyDialogBackground(bool isPage)
+{
+    return isPage ? PropertyPaneDarkShade() : Win32MainDark;
+}
+// Windows known-folder Location page: add space between its icon and caption
+// without translating any other row, changing the target, or matching titles.
+static constexpr wchar_t kFolderLocationCaptionState[] = L"W32M.LocationCaption";
+static constexpr wchar_t kFolderLocationCaptionOwner[] = L"W32M.LocationCaptionOwner";
+struct FolderLocationCaptionState { HWND label; RECT original, assigned; };
+static RECT FolderLocationChildRect(HWND child, HWND page) {
+    RECT rect{}; GetWindowRect(child, &rect);
+    MapWindowPoints(nullptr, page, reinterpret_cast<POINT*>(&rect), 2);
+    return rect;
+}
+static void RestoreFolderLocationCaption(HWND page) {
+    auto* state = reinterpret_cast<FolderLocationCaptionState*>(
+        RemovePropW(page, kFolderLocationCaptionState));
+    if (!state) return;
+    if (IsWindow(state->label) && GetParent(state->label) == page &&
+        GetPropW(state->label, kFolderLocationCaptionOwner) == state) {
+        RemovePropW(state->label, kFolderLocationCaptionOwner);
+        RECT current = FolderLocationChildRect(state->label, page);
+        if (EqualRect(&current, &state->assigned))
+            SetWindowPos(state->label, nullptr, state->original.left,
+                state->original.top, state->original.right-state->original.left,
+                state->original.bottom-state->original.top,
+                SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    delete state;
+}
+static void SpaceFolderLocationCaption(HWND page) {
+    if (!IsCustomDarkModeAllowed() || IsWinUiTabStyleActive() ||
+        SysHighContrastEnabled() || !IsClassName(page,L"#32770") ||
+        !(GetWindowLongW(page,GWL_STYLE)&WS_CHILD) || !HasTabControlSibling(page) ||
+        GetPropW(page,kFolderLocationCaptionState)) return;
+    HWND icon=GetDlgItem(page,401), label=GetDlgItem(page,413);
+    if (!IsClassName(icon,L"Static") || !IsClassName(label,L"Static") ||
+        (GetWindowLongW(icon,GWL_STYLE)&SS_TYPEMASK)!=SS_ICON ||
+        !IsClassName(GetDlgItem(page,406),L"Static") ||
+        !IsClassName(GetDlgItem(page,407),L"Edit") ||
+        !IsClassName(GetDlgItem(page,408),L"Button") ||
+        !IsClassName(GetDlgItem(page,409),L"Button") ||
+        !IsClassName(GetDlgItem(page,414),L"Button")) return;
+    const RECT image=FolderLocationChildRect(icon,page);
+    const RECT original=FolderLocationChildRect(label,page);
+    const int gap=MulDiv(10,GetDpiForWindow(page),96);
+    const int left=image.right+gap;
+    if (original.left>=left || original.left<image.right-gap ||
+        original.bottom<=image.top || original.top>=image.bottom ||
+        original.right-left<MulDiv(120,GetDpiForWindow(page),96)) return;
+    wchar_t text[1024]{};
+    const int count=GetWindowTextW(label,text,ARRAYSIZE(text));
+    if(count<=0 || count>=static_cast<int>(ARRAYSIZE(text))-1)return;
+    HDC dc=GetDC(label);if(!dc)return;
+    HFONT font=reinterpret_cast<HFONT>(SendMessageW(label,WM_GETFONT,0,0));
+    HGDIOBJ old=font?SelectObject(dc,font):nullptr;
+    RECT measure{0,0,original.right-left,0};
+    UINT flags=DT_CALCRECT|DT_WORDBREAK;
+    if(GetWindowLongW(label,GWL_STYLE)&SS_NOPREFIX)flags|=DT_NOPREFIX;
+    DrawTextW(dc,text,count,&measure,flags);
+    if(old)SelectObject(dc,old);ReleaseDC(label,dc);
+    // Keep native line height and every following control in place.
+    if(measure.bottom-measure.top>original.bottom-original.top)return;
+    RECT assigned=original;assigned.left=left;
+    auto* state=new FolderLocationCaptionState{label,original,assigned};
+    if(!SetPropW(page,kFolderLocationCaptionState,state)){delete state;return;}
+    if(!SetPropW(label,kFolderLocationCaptionOwner,state)){
+        RemovePropW(page,kFolderLocationCaptionState);delete state;return;
+    }
+    if(!SetWindowPos(label,nullptr,left,original.top,original.right-left,
+        original.bottom-original.top,SWP_NOZORDER|SWP_NOACTIVATE))
+    RestoreFolderLocationCaption(page);
+}
+
+
+
+static constexpr wchar_t kNativePropertyTabFont[] = L"W32M.PropertyTabFont";
+static constexpr wchar_t kNativePropertyTabFontHook[] = L"W32M.PropertyTabFontHook";
+struct NativePropertyTabFontState { HFONT original, assigned; };
+static bool NativePropertyTabFontEligible(HWND tab){
+    return FlatNativePropertyChrome(tab) && IsClassName(tab,L"SysTabControl32") &&
+        !g_tabFeaturesUnloading.load(std::memory_order_acquire) &&
+        !g_nativeUiFontUnloading.load(std::memory_order_acquire);
+}
+static void RestoreNativePropertyTabFont(HWND tab){
+    auto* state=reinterpret_cast<NativePropertyTabFontState*>(RemovePropW(tab,kNativePropertyTabFont));
+    if(!state)return;
+    if(reinterpret_cast<HFONT>(SendMessageW(tab,WM_GETFONT,0,0))==state->assigned){
+        const bool prior=t_nativePropertyFontUpdate;t_nativePropertyFontUpdate=true;
+        SendMessageW(tab,WM_SETFONT,reinterpret_cast<WPARAM>(state->original),FALSE);
+        t_nativePropertyFontUpdate=prior;
+    }
+    DeleteObject(state->assigned);delete state;
+}
+static LRESULT CALLBACK NativePropertyTabFontSubclass(HWND,UINT,WPARAM,LPARAM,DWORD_PTR);
+static void ApplyNativePropertyTabFont(HWND tab){
+    if(!NativePropertyTabFontEligible(tab) || GetPropW(tab,kNativePropertyTabFont))return;
+    HFONT original=reinterpret_cast<HFONT>(SendMessageW(tab,WM_GETFONT,0,0));
+    LOGFONTW description{};if(!original || !GetObjectW(original,sizeof(description),&description))return;
+    // Native font proportions must remain unchanged on every paint route.
+    description.lfWeight=FW_BOLD; // Reserve natural width for the selected caption.
+    HFONT assigned=CreateFontIndirectW(&description);if(!assigned)return;
+    auto* state=new NativePropertyTabFontState{original,assigned};
+    if(!SetPropW(tab,kNativePropertyTabFont,state)){DeleteObject(assigned);delete state;return;}
+    if(!GetPropW(tab,kNativePropertyTabFontHook)){
+        if(!WindhawkUtils::SetWindowSubclassFromAnyThread(tab,NativePropertyTabFontSubclass,0)){
+            RemovePropW(tab,kNativePropertyTabFont);DeleteObject(assigned);delete state;return;
+        }
+        if(!SetPropW(tab,kNativePropertyTabFontHook,reinterpret_cast<HANDLE>(1))){
+            WindhawkUtils::RemoveWindowSubclassFromAnyThread(tab,NativePropertyTabFontSubclass);
+            RemovePropW(tab,kNativePropertyTabFont);DeleteObject(assigned);delete state;return;
+        }
+    }
+    const bool prior=t_nativePropertyFontUpdate;t_nativePropertyFontUpdate=true;
+    SendMessageW(tab,WM_SETFONT,reinterpret_cast<WPARAM>(assigned),FALSE);
+    t_nativePropertyFontUpdate=prior;
+}
+static void RemoveNativePropertyTabFont(HWND tab){
+    RestoreNativePropertyTabFont(tab);
+    if(RemovePropW(tab,kNativePropertyTabFontHook))
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(tab,NativePropertyTabFontSubclass);
+}
+static LRESULT CALLBACK NativePropertyTabFontSubclass(HWND tab,UINT message,
+    WPARAM wp,LPARAM lp,DWORD_PTR){
+    if(message==WM_NCDESTROY){
+        auto* state=reinterpret_cast<NativePropertyTabFontState*>(RemovePropW(tab,kNativePropertyTabFont));
+        RemovePropW(tab,kNativePropertyTabFontHook);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(tab,NativePropertyTabFontSubclass);
+        LRESULT result=DefSubclassProc(tab,message,wp,lp);
+        if(state){DeleteObject(state->assigned);delete state;}
+        return result;
+    }
+    const bool assignment=message==WM_SETFONT && !t_nativePropertyFontUpdate;
+    if(assignment)RestoreNativePropertyTabFont(tab);
+    LRESULT result=DefSubclassProc(tab,message,wp,lp);
+    if((assignment || message==g_nativeUiFontSyncMessage) && !t_nativePropertyFontUpdate)
+        ApplyNativePropertyTabFont(tab);
+    return result;
+}
+static HFONT NativePropertyCaptionBaseFont(HWND tab,HFONT fallback){
+    auto* state=reinterpret_cast<NativePropertyTabFontState*>(GetPropW(tab,kNativePropertyTabFont));
+    return state?state->original:fallback;
+}
+
+// The general font policy must see through our owned role font on repaint.
+// Otherwise it can save that temporary HFONT as the application's original.
+static HFONT NativePropertyTabUnderlyingFont(HWND tab,HFONT current){
+    auto* state=reinterpret_cast<NativePropertyTabFontState*>(GetPropW(tab,kNativePropertyTabFont));
+    return state && current==state->assigned ? state->original : current;
+}
+
+
+// Translate a property's content as one group; never reflow labels or fields.
+// Application layout changes supersede our saved positions, and unload restores
+// only positions which still match the last position assigned here.
+static constexpr wchar_t kBalancedPageState[] = L"W32M.BalancedPage";
+static constexpr wchar_t kBalancedChildOwner[] = L"W32M.BalancedChild";
+static constexpr wchar_t kNativeTabSavedSize[] = L"W32M.NativeTabSize";
+struct BalancedChildPosition { POINT original{}, assigned{}; };
+struct BalancedPageState {
+    bool applying = false;
+    bool resized = false;
+    RECT originalPage{}, assignedPage{};
+    std::unordered_map<HWND, BalancedChildPosition> children;
+};
+static UINT BalancedPageRestoreMessage() {
+    static const UINT message=RegisterWindowMessageW(L"Win32UIModernizer.RestoreBalancedPage");
+    return message;
+}
+static bool NativePropertyPresentationEnabled(HWND page) {
+    return g_settings.FlatPropertyPresentation && IsCustomDarkModeAllowed() && !IsWinUiTabStyleActive() &&
+        !SysHighContrastEnabled() && !g_tabFeaturesUnloading.load(std::memory_order_acquire) &&
+        IsClassName(page, L"#32770") && HasTabControlSibling(page) &&
+        (GetWindowLongPtrW(page, GWL_STYLE) & WS_CHILD);
+}
+static POINT BalancedChildPoint(HWND child, HWND page) {
+    RECT rect{};GetWindowRect(child,&rect);
+    MapWindowPoints(nullptr,page,reinterpret_cast<POINT*>(&rect),2);
+    return {rect.left,rect.top};
+}
+// Flat tabs keep the native control's layout, hit testing and scrolling.
+// DRAWITEM supplies documented tab-client coordinates and an exact item ID.
+struct NativeFlatTabState { int hot=-1; bool tracking=false; RECT row{}; bool rowValid=false; unsigned paintDepth=0; };
+static void RefreshNativeFlatTabRow(HWND tab,NativeFlatTabState* state){
+    const int count=TabCtrl_GetItemCount(tab);state->rowValid=count>0&&TabCtrl_GetRowCount(tab)==1&&TabCtrl_GetItemRect(tab,0,&state->row);
+    for(int i=1;i<count&&state->rowValid;i++){RECT peer{};state->rowValid=TabCtrl_GetItemRect(tab,i,&peer)!=FALSE;
+        state->row.top=(std::max)(state->row.top,peer.top);state->row.bottom=(std::min)(state->row.bottom,peer.bottom);}
+}
+static bool NativeFlatTabDrawItem(HWND root,const DRAWITEMSTRUCT* item){
+    if(!item || item->CtlType!=ODT_TAB || !item->hDC || GetParent(item->hwndItem)!=root ||
+       !GetPropW(item->hwndItem,kNativeFlatTabOwner) || !FlatNativePropertyChrome(item->hwndItem) ||
+       g_tabFeaturesUnloading.load(std::memory_order_acquire))return false;
+    HWND tab=item->hwndItem;const int count=TabCtrl_GetItemCount(tab);
+    if(item->itemID>=static_cast<UINT>(count) || TabCtrl_GetRowCount(tab)!=1)return false;
+    wchar_t text[1024]{};TCITEMW value{};value.mask=TCIF_TEXT|TCIF_IMAGE;value.pszText=text;value.cchTextMax=1024;value.iImage=-1;
+    if(!TabCtrl_GetItem(tab,item->itemID,&value) || value.iImage>=0)return false;
+    auto* state=reinterpret_cast<NativeFlatTabState*>(GetPropW(tab,kNativeFlatTabOwner));
+    if(!state->rowValid)return false;
+    RECT row=item->rcItem;row.top=state->row.top;row.bottom=state->row.bottom;
+    HFONT base=NativePropertyCaptionBaseFont(tab,reinterpret_cast<HFONT>(SendMessageW(tab,WM_GETFONT,0,0)));
+    LOGFONTW description{};if(!base || !GetObjectW(base,sizeof(description),&description))return false;
+    description.lfWeight=FW_NORMAL;HFONT regular=g_winUiTabFontCache.Ensure(description);
+    description.lfWeight=FW_BOLD;HFONT bold=g_winUiTabFontCache.Ensure(description);if(!regular||!bold)return false;
+    const int saved=SaveDC(item->hDC);if(!saved)return false;
+    IntersectClipRect(item->hDC,item->rcItem.left,item->rcItem.top,item->rcItem.right,item->rcItem.bottom);
+    const bool selected=TabCtrl_GetCurSel(tab)==static_cast<int>(item->itemID);
+    HBRUSH brush=GetCachedSolidBrush(!selected&&state->hot==static_cast<int>(item->itemID)?RGB(48,48,48):Win32MainDark);
+    FillRect_orig(item->hDC,&item->rcItem,brush);
+    TEXTMETRICW normalMetric{},boldMetric{},metric{};
+    SelectObject(item->hDC,regular);GetTextMetricsW(item->hDC,&normalMetric);
+    SelectObject(item->hDC,bold);GetTextMetricsW(item->hDC,&boldMetric);
+    const int ascent=(std::max)(normalMetric.tmAscent,boldMetric.tmAscent),descent=(std::max)(normalMetric.tmDescent,boldMetric.tmDescent);
+    const int baseline=row.top+(row.bottom-row.top-ascent-descent)/2+ascent;
+    SelectObject(item->hDC,selected?bold:regular);GetTextMetricsW(item->hDC,&metric);
+    RECT caption{item->rcItem.left,baseline-metric.tmAscent,item->rcItem.right,row.bottom};
+    SetTextColor(item->hDC,(item->itemState&ODS_DISABLED)?RGB(128,128,128):RGB(235,235,235));SetBkMode(item->hDC,TRANSPARENT);
+    UINT flags=DT_SINGLELINE|DT_TOP|DT_CENTER;
+    if(item->itemState&ODS_NOACCEL)flags|=DT_HIDEPREFIX;
+    DrawTextW_orig(item->hDC,text,-1,&caption,flags);
+    if((item->itemState&ODS_FOCUS)&&!(item->itemState&ODS_NOFOCUSRECT)){
+        RECT measured{0,0,0,0};DrawTextW_orig(item->hDC,text,-1,&measured,flags|DT_CALCRECT);
+        const int width=(std::min)(measured.right-measured.left,caption.right-caption.left-4);
+        const int left=(caption.left+caption.right-width)/2,y=(std::min)(static_cast<int>(row.bottom)-2,baseline+2);
+        HBRUSH focus=GetCachedSolidBrush(RGB(112,112,112));
+        for(int x=left;x<left+width;x+=2){RECT dot{x,y,x+1,y+1};FillRect_orig(item->hDC,&dot,focus);}
+    }
+    RestoreDC(item->hDC,saved);return true;
+}
+static void RemoveNativeFlatTab(HWND tab);
+static LRESULT CALLBACK NativeFlatTabSubclass(HWND tab,UINT message,WPARAM wp,LPARAM lp,DWORD_PTR){
+    auto* state=reinterpret_cast<NativeFlatTabState*>(GetPropW(tab,kNativeFlatTabOwner));
+    if(message==WM_NCDESTROY){
+        RemovePropW(tab,kNativeFlatTabOwner);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(tab,NativeFlatTabSubclass);
+        delete state;
+        return DefSubclassProc(tab,message,wp,lp);
+    }
+    const bool paint=message==WM_PAINT || message==WM_PRINTCLIENT || message==WM_PRINT;
+    // Native tab drawing must resume before forwarding the first paint in a
+    // mode we do not own. Otherwise TCS_OWNERDRAWFIXED still dispatches to a
+    // parent whose guarded DRAWITEM handler correctly declines that mode.
+    if(state&&paint&&(!FlatNativePropertyChrome(tab)||g_tabFeaturesUnloading.load(std::memory_order_acquire))){
+        RemoveNativeFlatTab(tab);RemoveNativePropertyTabFont(tab);
+        RemovePropW(GetParent(tab),kNativePropertyPrepared);
+        return DefSubclassProc(tab,message,wp,lp);
+    }
+    if(state && (message==WM_MOUSEMOVE || message==WM_MOUSELEAVE)){
+        int hot=-1;
+        if(message==WM_MOUSEMOVE){TCHITTESTINFO hit{};hit.pt={static_cast<short>(LOWORD(lp)),static_cast<short>(HIWORD(lp))};hot=TabCtrl_HitTest(tab,&hit);
+            if(!state->tracking){TRACKMOUSEEVENT track{sizeof(track),TME_LEAVE,tab,0};state->tracking=TrackMouseEvent(&track)!=FALSE;}}
+        else state->tracking=false;
+        if(hot!=state->hot){state->hot=hot;InvalidateRect(tab,nullptr,FALSE);}
+    }
+    // Buffered WM_PRINT paths have no BeginPaint, and g_tlsPaintHwnd can
+    // otherwise name an earlier control. Bracket this exact native tab paint
+    // so its theme backgrounds cannot fall back to a raised/light native edge.
+    struct TabPaintOwnerScope {
+        HWND window;bool completed;
+        TabPaintOwnerScope(HWND w,bool actual):window(w),completed(actual){if(window)PaintOwnerEnter(window);}
+        ~TabPaintOwnerScope(){if(window)PaintOwnerLeave(window,completed);}
+    } ownerScope(state&&paint?tab:nullptr,message==WM_PAINT);
+    if(state&&paint){if(!state->paintDepth)RefreshNativeFlatTabRow(tab,state);state->paintDepth++;}
+    const LRESULT result=DefSubclassProc(tab,message,wp,lp);
+    if(state&&paint&&GetPropW(tab,kNativeFlatTabOwner)==state)state->paintDepth--;
+    return result;
+}
+static void RemoveNativeFlatTab(HWND tab){
+    auto* state=reinterpret_cast<NativeFlatTabState*>(RemovePropW(tab,kNativeFlatTabOwner));if(!state)return;
+    WindhawkUtils::RemoveWindowSubclassFromAnyThread(tab,NativeFlatTabSubclass);
+    if(IsWindow(tab)){SetWindowLongPtrW(tab,GWL_STYLE,GetWindowLongPtrW(tab,GWL_STYLE)&~static_cast<LONG_PTR>(TCS_OWNERDRAWFIXED));InvalidateRect(tab,nullptr,TRUE);}
+    delete state;
+}
+static void InstallNativeFlatTab(HWND tab){
+    if(!FlatNativePropertyChrome(tab) || GetPropW(tab,kNativeFlatTabOwner) ||
+       (GetWindowLongPtrW(tab,GWL_STYLE)&TCS_OWNERDRAWFIXED) ||
+       g_tabFeaturesUnloading.load(std::memory_order_acquire))return;
+    for(int i=0;i<TabCtrl_GetItemCount(tab);i++){
+        TCITEMW item{
+        }
+        ;
+        item.mask=TCIF_IMAGE;
+        item.iImage=-1;
+        if(TabCtrl_GetItem(tab,i,&item)&&item.iImage>=0)return;
+    }
+    auto* state=new NativeFlatTabState;
+    if(!SetPropW(tab,kNativeFlatTabOwner,state)){delete state;return;}
+    if(!WindhawkUtils::SetWindowSubclassFromAnyThread(tab,NativeFlatTabSubclass,0)){RemovePropW(tab,kNativeFlatTabOwner);delete state;return;}
+    SetWindowLongPtrW(tab,GWL_STYLE,GetWindowLongPtrW(tab,GWL_STYLE)|TCS_OWNERDRAWFIXED);
+    RefreshNativeFlatTabRow(tab,state);
+    InvalidateRect(tab,nullptr,TRUE);
+}
+
+static constexpr wchar_t kFlatPropertyRule[]=L"W32M.FlatPropertyRule";
+static bool FlatPropertyRuleEligible(HWND w){
+    if(!FlatNativePropertyChrome(w)||!IsClassName(w,L"Static")||GetWindowTextLengthW(w)!=0)return false;
+    const LONG type=GetWindowLongPtrW(w,GWL_STYLE)&SS_TYPEMASK;
+    if(type==SS_ICON||type==SS_BITMAP||type==SS_ENHMETAFILE||type==SS_OWNERDRAW)return false;
+    RECT r{};GetWindowRect(w,&r);const int width=r.right-r.left,height=r.bottom-r.top;
+    return height>0&&height<=MulDiv(6,GetDpiForWindow(w),96)&&width>4*height;
+}
+static LRESULT CALLBACK FlatPropertyRuleSubclass(HWND w,UINT m,WPARAM a,LPARAM b,DWORD_PTR){
+    if(m==WM_NCDESTROY){
+        RemovePropW(w,kFlatPropertyRule);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(w,FlatPropertyRuleSubclass);
+        return DefSubclassProc(w,m,a,b);
+    }
+    const bool painting=m==WM_NCPAINT||m==WM_PRINT||m==WM_PAINT||m==WM_PRINTCLIENT||m==WM_ERASEBKGND;
+    if(painting&&GetPropW(w,kFlatPropertyRule)&&FlatPropertyRuleEligible(w)&&!g_tabFeaturesUnloading.load(std::memory_order_acquire)){
+        if(m==WM_NCPAINT){
+            const LRESULT result=DefSubclassProc(w,m,a,b);
+            HDC dc=GetWindowDC(w);
+            if(dc){
+                RECT r{
+                }
+                ;
+                GetWindowRect(w,&r);
+                OffsetRect(&r,-r.left,-r.top);
+                FillRect_orig(dc,&r,GetCachedSolidBrush(Win32MainDark));
+                ReleaseDC(w,dc);
+            }
+            return result;
+        }
+        if(m==WM_PRINT&&a&&(b&PRF_NONCLIENT)){
+            RECT r{
+            }
+            ;
+            GetWindowRect(w,&r);
+            OffsetRect(&r,-r.left,-r.top);
+            FillRect_orig((HDC)a,&r,GetCachedSolidBrush(Win32MainDark));
+            return 0;
+        }
+        if(m==WM_PAINT){
+            PAINTSTRUCT ps{
+            }
+            ;
+            HDC dc=BeginPaint(w,&ps);
+            RECT r{
+            }
+            ;
+            GetClientRect(w,&r);
+            FillRect_orig(dc,&r,GetCachedSolidBrush(Win32MainDark));
+            EndPaint(w,&ps);
+            return 0;
+        }
+        if((m==WM_PRINTCLIENT||m==WM_ERASEBKGND)&&a){
+            RECT r{
+            }
+            ;
+            GetClientRect(w,&r);
+            FillRect_orig((HDC)a,&r,GetCachedSolidBrush(Win32MainDark));
+            return m==WM_ERASEBKGND?1:0;
+        }
+    }
+    return DefSubclassProc(w,m,a,b);
+}
+static BOOL CALLBACK InstallFlatPropertyRuleChild(HWND w,LPARAM){
+    if(FlatPropertyRuleEligible(w)&&!GetPropW(w,kFlatPropertyRule)&&!g_tabFeaturesUnloading.load(std::memory_order_acquire)){
+        if(WindhawkUtils::SetWindowSubclassFromAnyThread(w,FlatPropertyRuleSubclass,0)){
+            if(!SetPropW(w,kFlatPropertyRule,(HANDLE)1))WindhawkUtils::RemoveWindowSubclassFromAnyThread(w,FlatPropertyRuleSubclass);
+            InvalidateRect(w,nullptr,TRUE);
+        }
+    }return TRUE;
+}
+static BOOL CALLBACK RemoveFlatPropertyRuleChild(HWND w,LPARAM){
+    if(RemovePropW(w,kFlatPropertyRule)){
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(w,FlatPropertyRuleSubclass);
+        InvalidateRect(w,nullptr,TRUE);
+    }
+    return TRUE;
+}
+static void RemoveFlatPropertyRules(HWND root){EnumChildWindows(root,RemoveFlatPropertyRuleChild,0);}
+
+// Details owns a report list rather than a compact collection of fields.
+// Measure its native rows/columns, preserving native hit testing and selection.
+static constexpr wchar_t kNativeDetailsLayout[]=L"W32M.DetailsLayout";
+struct NativeDetailsLayoutState {
+    HWND list{},footer{};
+    RECT originalList{},originalFooter{},assignedList{},assignedFooter{};
+    int originalColumns[2]{},assignedColumns[2]{};
+};
+static RECT NativeDetailsRect(HWND window,HWND page){
+    RECT r{};GetWindowRect(window,&r);MapWindowPoints(nullptr,page,reinterpret_cast<POINT*>(&r),2);return r;
+}
+static void RestoreNativeDetailsLayout(HWND page){
+    auto* s=reinterpret_cast<NativeDetailsLayoutState*>(RemovePropW(page,kNativeDetailsLayout));if(!s)return;
+    if(IsWindow(s->list)&&GetParent(s->list)==page){
+        for(int c=0;c<2;c++)if(ListView_GetColumnWidth(s->list,c)==s->assignedColumns[c])
+            ListView_SetColumnWidth(s->list,c,s->originalColumns[c]);
+        RECT now=NativeDetailsRect(s->list,page);
+        if(EqualRect(&now,&s->assignedList))SetWindowPos(s->list,nullptr,s->originalList.left,s->originalList.top,
+            s->originalList.right-s->originalList.left,s->originalList.bottom-s->originalList.top,SWP_NOZORDER|SWP_NOACTIVATE);
+    }
+    if(IsWindow(s->footer)&&GetParent(s->footer)==page){
+        RECT now=NativeDetailsRect(s->footer,page);
+        if(EqualRect(&now,&s->assignedFooter))SetWindowPos(s->footer,nullptr,s->originalFooter.left,s->originalFooter.top,
+            s->originalFooter.right-s->originalFooter.left,s->originalFooter.bottom-s->originalFooter.top,SWP_NOZORDER|SWP_NOACTIVATE);
+    }
+    delete s;
+}
+static bool BalanceNativeDetailsPage(HWND page){
+    HWND list=GetDlgItem(page,271),footer=GetDlgItem(page,272);
+    if(!IsClassName(list,L"SysListView32")||!footer || GetParent(list)!=page || GetParent(footer)!=page)return false;
+    HWND header=ListView_GetHeader(list);
+    if(!header || Header_GetItemCount(header)!=2 || (GetWindowLongW(list,GWL_STYLE)&LVS_TYPEMASK)!=LVS_REPORT)return false;
+    if(GetPropW(page,kNativeDetailsLayout))return true;
+    const int rows=ListView_GetItemCount(list);
+    if(rows<1 || rows>256 || ListView_GetImageList(list,LVSIL_SMALL) || ListView_GetTopIndex(list)!=0)return true;
+    const UINT dpi=GetDpiForWindow(page);
+    const int padding=MulDiv(20,dpi,96),margin=MulDiv(12,dpi,96),gap=MulDiv(12,dpi,96);
+    RECT area{},client{};GetClientRect(page,&area);GetClientRect(list,&client);
+    RECT listRect=NativeDetailsRect(list,page),footerRect=NativeDetailsRect(footer,page);
+    int columns[2]{};HDC dc=GetDC(list);if(!dc)return true;
+    HFONT font=reinterpret_cast<HFONT>(SendMessageW(list,WM_GETFONT,0,0));
+    HGDIOBJ old=font?SelectObject(dc,font):nullptr;bool valid=true;int bottom=0;
+    for(int c=0;c<2 && valid;c++){
+        wchar_t text[2048]{};HDITEMW h{};h.mask=HDI_TEXT;h.pszText=text;h.cchTextMax=2048;
+        if(!Header_GetItem(header,c,&h)){valid=false;break;}
+        SIZE extent{};GetTextExtentPoint32W(dc,text,lstrlenW(text),&extent);columns[c]=extent.cx+padding;
+        for(int row=0;row<rows;row++){
+            LVITEMW value{};value.iSubItem=c;value.pszText=text;value.cchTextMax=2048;
+            const int count=static_cast<int>(SendMessageW(list,LVM_GETITEMTEXT,row,reinterpret_cast<LPARAM>(&value)));
+            if(count>=2047){valid=false;break;}
+            if(!GetTextExtentPoint32W(dc,text,count,&extent)){valid=false;break;}
+            columns[c]=(std::max)(columns[c],static_cast<int>(extent.cx)+padding);
+        }
+    }
+    if(old)SelectObject(dc,old);ReleaseDC(list,dc);
+    for(int row=0;row<rows && valid;row++){
+        RECT r{};if(!ListView_GetItemRect(list,row,&r,LVIR_BOUNDS)||r.bottom<=r.top){valid=false;break;}
+        bottom=(std::max)(bottom,static_cast<int>(r.bottom));
+    }
+    const int groups=static_cast<int>(SendMessageW(list,LVM_GETGROUPCOUNT,0,0));
+    for(int i=0;i<groups && i<256 && valid;i++){
+        LVGROUP group{};group.cbSize=sizeof(group);group.mask=LVGF_GROUPID;
+        if(!SendMessageW(list,LVM_GETGROUPINFOBYINDEX,i,reinterpret_cast<LPARAM>(&group))){valid=false;break;}
+        RECT r{};r.top=LVGGR_GROUP;
+        if(!SendMessageW(list,LVM_GETGROUPRECT,group.iGroupId,reinterpret_cast<LPARAM>(&r))){valid=false;break;}
+        bottom=(std::max)(bottom,static_cast<int>(r.bottom));
+    }
+    if(!valid || bottom<=0)return true;
+    int width=columns[0]+columns[1]+GetSystemMetricsForDpi(SM_CXVSCROLL,dpi)+MulDiv(4,dpi,96)+(listRect.right-listRect.left-client.right);
+    const int height=bottom+GetSystemMetricsForDpi(SM_CYHSCROLL,dpi)+MulDiv(6,dpi,96)+(listRect.bottom-listRect.top-client.bottom);
+    const int footerWidth=footerRect.right-footerRect.left,footerHeight=footerRect.bottom-footerRect.top;
+    const int totalHeight=height+gap+footerHeight;
+    // A long value can need the native column widths while the short list
+    // still benefits from vertical centering. Treat the two axes separately.
+    const bool compactColumns=width<=area.right-2*margin;
+    if(!compactColumns){width=listRect.right-listRect.left;for(int c=0;c<2;c++)columns[c]=ListView_GetColumnWidth(list,c);}
+    if(footerWidth>area.right-2*margin ||
+        totalHeight>area.bottom-2*margin || width<1 || height<1)return true;
+    auto* state=new NativeDetailsLayoutState;state->list=list;state->footer=footer;
+    state->originalList=listRect;state->originalFooter=footerRect;
+    for(int c=0;c<2;c++)state->originalColumns[c]=ListView_GetColumnWidth(list,c);
+    if(!SetPropW(page,kNativeDetailsLayout,state)){delete state;return true;}
+    const int top=(area.bottom-totalHeight)/2;
+    for(int c=0;c<2;c++)ListView_SetColumnWidth(list,c,columns[c]);
+    const bool moved=SetWindowPos(list,nullptr,(area.right-width)/2,top,width,height,SWP_NOZORDER|SWP_NOACTIVATE) &&
+        SetWindowPos(footer,nullptr,(area.right-footerWidth)/2,top+height+gap,footerWidth,footerHeight,SWP_NOZORDER|SWP_NOACTIVATE);
+    state->assignedList=NativeDetailsRect(list,page);state->assignedFooter=NativeDetailsRect(footer,page);
+    for(int c=0;c<2;c++)state->assignedColumns[c]=ListView_GetColumnWidth(list,c);
+    RECT after{};GetClientRect(list,&after);
+    bool fits=moved && (compactColumns ? after.right>=columns[0]+columns[1] :
+        state->assignedColumns[0]==state->originalColumns[0] && state->assignedColumns[1]==state->originalColumns[1]);
+    for(int row=0;row<rows && fits;row++){RECT r{};fits=ListView_GetItemRect(list,row,&r,LVIR_BOUNDS)&&r.bottom<=after.bottom;}
+    if(!fits)RestoreNativeDetailsLayout(page);
+    return true;
+}
+
+static void RestoreBalancedPage(HWND page) {
+    if (GetWindowThreadProcessId(page,nullptr)!=GetCurrentThreadId()) {
+        DWORD_PTR ignored=0;
+        SendMessageTimeoutW(page,BalancedPageRestoreMessage(),0,0,
+            SMTO_ABORTIFHUNG|SMTO_BLOCK,500,&ignored);
+        return;
+    }
+    RemovePropW(page,kNativePropertyPrepared);
+    RestoreFolderLocationCaption(page);
+    RestoreNativeDetailsLayout(page);
+    auto* state = reinterpret_cast<BalancedPageState*>(RemovePropW(page,kBalancedPageState));
+    if (!state) return;
+    state->applying=true;
+    for (const auto& [child,position]:state->children) {
+        if (!IsWindow(child) || GetParent(child)!=page ||
+            GetPropW(child,kBalancedChildOwner)!=state) continue;
+        RemovePropW(child,kBalancedChildOwner);
+        const POINT current=BalancedChildPoint(child,page);
+        if (current.x==position.assigned.x && current.y==position.assigned.y)
+            SetWindowPos(child,nullptr,position.original.x,position.original.y,0,0,
+                SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_ASYNCWINDOWPOS);
+    }
+    RECT pageRect{};GetWindowRect(page,&pageRect);
+    MapWindowPoints(nullptr,GetParent(page),reinterpret_cast<POINT*>(&pageRect),2);
+    if (state->resized && EqualRect(&pageRect,&state->assignedPage))
+        SetWindowPos(page,nullptr,state->originalPage.left,state->originalPage.top,
+            state->originalPage.right-state->originalPage.left,
+            state->originalPage.bottom-state->originalPage.top,SWP_NOZORDER|SWP_NOACTIVATE);
+    delete state;
+}
+static void RestoreNativePropertyTabSize(HWND root) {
+    HWND tab=FindWindowExW(root,nullptr,L"SysTabControl32",nullptr);
+    if(tab && GetWindowThreadProcessId(tab,nullptr)!=GetCurrentThreadId()){
+        DWORD_PTR ignored=0;
+        SendMessageTimeoutW(root,BalancedPageRestoreMessage(),0,0,
+            SMTO_ABORTIFHUNG|SMTO_BLOCK,500,&ignored);
+        return;
+    }
+    if(tab){RemoveNativeFlatTab(tab);RemoveNativePropertyTabFont(tab);}
+    const auto saved=reinterpret_cast<UINT_PTR>(RemovePropW(tab,kNativeTabSavedSize));
+    if(saved)SendMessageW(tab,TCM_SETITEMSIZE,0,static_cast<LPARAM>(saved-1));
+}
+static void SpaceNativePropertyTabs(HWND root) {
+    if (!g_settings.FlatPropertyPresentation || !IsCustomDarkModeAllowed() || IsWinUiTabStyleActive() || SysHighContrastEnabled() ||
+        g_tabFeaturesUnloading.load(std::memory_order_acquire))return;
+    HWND tab=FindWindowExW(root,nullptr,L"SysTabControl32",nullptr);
+    if (!tab || GetWindowThreadProcessId(tab,nullptr)!=GetCurrentThreadId() ||
+        (GetWindowLongPtrW(tab,GWL_STYLE)&(TCS_VERTICAL|TCS_BOTTOM)) ||
+        ((GetWindowLongPtrW(tab,GWL_STYLE)&TCS_OWNERDRAWFIXED)&&!GetPropW(tab,kNativeFlatTabOwner)))return;
+    ApplyNativePropertyTabFont(tab);
+    InstallNativeFlatTab(tab);
+    HFONT font=reinterpret_cast<HFONT>(SendMessageW(tab,WM_GETFONT,0,0));
+    HDC dc=GetDC(tab);if(!dc)return;
+    HGDIOBJ old=font?SelectObject(dc,font):nullptr;
+    TEXTMETRICW metric{};const bool measured=GetTextMetricsW(dc,&metric);
+    if(old)SelectObject(dc,old);ReleaseDC(tab,dc);
+    if(!measured)return;
+    RECT item{};if(!TabCtrl_GetItemRect(tab,0,&item))return;
+    const int wanted=metric.tmHeight+MulDiv(10,GetDpiForWindow(tab),96);
+    if(item.bottom-item.top>=wanted)return;
+    const int extra=wanted-(item.bottom-item.top);
+    for(HWND page=GetWindow(root,GW_CHILD);page;page=GetWindow(page,GW_HWNDNEXT)){
+        if(!IsClassName(page,L"#32770") || !(GetWindowLongW(page,GWL_STYLE)&WS_VISIBLE))continue;
+        RECT area{};GetClientRect(page,&area);
+        for(HWND child=GetWindow(page,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
+            if(!(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE))continue;
+            RECT bounds{};GetWindowRect(child,&bounds);MapWindowPoints(nullptr,page,reinterpret_cast<POINT*>(&bounds),2);
+            if(bounds.bottom>area.bottom-extra-2)return;
+        }
+    }
+    const LRESULT previous=SendMessageW(tab,TCM_SETITEMSIZE,0,MAKELPARAM(0,wanted));
+    if(!GetPropW(tab,kNativeTabSavedSize) &&
+        !SetPropW(tab,kNativeTabSavedSize,reinterpret_cast<HANDLE>(static_cast<UINT_PTR>(previous)+1)))
+        SendMessageW(tab,TCM_SETITEMSIZE,0,previous);
+}
+static void BalanceNativePropertyPage(HWND page, bool preparing = false) {
+    if (!NativePropertyPresentationEnabled(page) || (!preparing && !IsWindowVisible(page))) return;
+    // All state mutation and child movement happens on the page's UI thread.
+    if (GetWindowThreadProcessId(page,nullptr)!=GetCurrentThreadId()) return;
+    if(BalanceNativeDetailsPage(page))return;
+    auto* state=reinterpret_cast<BalancedPageState*>(GetPropW(page,kBalancedPageState));
+    if (state && state->applying) return;
+    HWND root=GetParent(page),tab=FindWindowExW(root,nullptr,L"SysTabControl32",nullptr);
+    RECT display{};GetClientRect(tab,&display);TabCtrl_AdjustRect(tab,FALSE,&display);
+    MapWindowPoints(tab,root,reinterpret_cast<POINT*>(&display),2);
+    RECT pageRect{};GetWindowRect(page,&pageRect);
+    MapWindowPoints(nullptr,root,reinterpret_cast<POINT*>(&pageRect),2);
+    if (pageRect.top<display.top && pageRect.bottom-display.top>50) {
+        const int availableHeight=pageRect.bottom-display.top;
+        for(HWND child=GetWindow(page,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
+            if(!(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE))continue;
+            RECT bounds{};GetWindowRect(child,&bounds);MapWindowPoints(nullptr,page,reinterpret_cast<POINT*>(&bounds),2);
+            if(bounds.bottom>availableHeight-2)return;
+        }
+        if(!state){state=new BalancedPageState;if(!SetPropW(page,kBalancedPageState,state)){delete state;return;}}
+        if(!state->resized || !EqualRect(&pageRect,&state->assignedPage))state->originalPage=pageRect;
+        state->applying=true;
+        if(SetWindowPos(page,nullptr,pageRect.left,display.top,pageRect.right-pageRect.left,
+                pageRect.bottom-display.top,SWP_NOZORDER|SWP_NOACTIVATE)){
+            state->resized=true;state->assignedPage=pageRect;state->assignedPage.top=display.top;
+        }
+        state->applying=false;
+    }
+    RECT client{};if (!GetClientRect(page,&client)) return;
+    RECT bounds{};bool found=false;
+    std::vector<HWND> children;
+    for (HWND child=GetWindow(page,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)) {
+        const LONG_PTR style=GetWindowLongPtrW(child,GWL_STYLE);
+        if (!(style&WS_VISIBLE) || IsClassName(child,L"ScrollBar")) continue;
+        RECT rect{};if (!GetWindowRect(child,&rect))continue;
+        MapWindowPoints(nullptr,page,reinterpret_cast<POINT*>(&rect),2);
+        if (rect.right<=rect.left || rect.bottom<=rect.top)continue;
+        // Scrolling/full-page hosts own their own layout; moving them would
+        // shift a viewport rather than balance a compact group of controls.
+        if (rect.right-rect.left>=client.right-4 && rect.bottom-rect.top>=client.bottom-4)return;
+        if (!found)bounds=rect;else UnionRect(&bounds,&bounds,&rect);
+        found=true;children.push_back(child);
+    }
+    if (!found || children.empty())return;
+    const int margin=(std::max)(4,MulDiv(12,GetDpiForWindow(page),96));
+    const int width=bounds.right-bounds.left,height=bounds.bottom-bounds.top;
+    // Never shrink, clip or scale content to make it fit.
+    if (width>client.right-2*margin || height>client.bottom-2*margin)return;
+    const int dx=(client.right-width)/2-bounds.left;
+    const int dy=(client.bottom-height)/2-bounds.top;
+    if (!dx && !dy)return;
+    if (!state) {
+        state=new BalancedPageState;
+        if (!SetPropW(page,kBalancedPageState,state)){delete state;return;}
+    }
+    state->applying=true;
+    for (HWND child:children) {
+        const POINT current=BalancedChildPoint(child,page);
+        auto previous=state->children.find(child);
+        if (previous==state->children.end() || GetPropW(child,kBalancedChildOwner)!=state) {
+            if (!SetPropW(child,kBalancedChildOwner,state))continue;
+            previous=state->children.insert_or_assign(child,BalancedChildPosition{current,current}).first;
+        } else if (current.x!=previous->second.assigned.x || current.y!=previous->second.assigned.y) {
+            previous->second.original=current;
+        }
+        if (SetWindowPos(child,nullptr,current.x+dx,current.y+dy,0,0,
+                SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE))
+            previous->second.assigned={current.x+dx,current.y+dy};
+    }
+    state->applying=false;
+}
+
+// Do native geometry work before show. Paint is only a one-time fallback for
+// late attachment; subsequent repaints must not recenter visible content.
+static void PrepareNativePropertyPresentation(HWND window, DWORD_PTR kind,
+    bool refreshHidden = false) {
+    if (!IsCustomDarkModeAllowed() || IsWinUiTabStyleActive() ||
+        SysHighContrastEnabled()) return;
+    const auto prepared = reinterpret_cast<UINT_PTR>(
+        GetPropW(window,kNativePropertyPrepared));
+    if (prepared==2 || (prepared && !refreshHidden)) return;
+    const bool page = kind==kPropertyPageSubclassId;
+    if (page) {
+        if (!NativePropertyPresentationEnabled(window) ||
+            !GetWindow(window,GW_CHILD)) return;
+    } else {
+        HWND tab=FindWindowExW(window,nullptr,L"SysTabControl32",nullptr);
+        if(!tab || TabCtrl_GetItemCount(tab)<=0)return;
+    }
+    if(!SetPropW(window,kNativePropertyPrepared,reinterpret_cast<HANDLE>(2)))return;
+    if(page){
+        EnumChildWindows(window,InstallFlatPropertyRuleChild,0);
+        RestoreFolderLocationCaption(window);
+        BalanceNativePropertyPage(window,true);
+        SpaceFolderLocationCaption(window);
+    }else{
+        SpaceNativePropertyTabs(window);
+        for(HWND child=GetWindow(window,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
+            if(IsClassName(child,L"#32770") &&
+                (GetWindowLongW(child,GWL_STYLE)&WS_VISIBLE))
+                PrepareNativePropertyPresentation(child,kPropertyPageSubclassId,true);
+        }
+    }
+    SetPropW(window,kNativePropertyPrepared,reinterpret_cast<HANDLE>(1));
+}
+
 static LRESULT CALLBACK PropertyDialogSubclassProc(
     HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, DWORD_PTR dwRefData)
 {
+    FilePickerCaptionRefresh(hwnd,msg);
+    if(msg==WM_DRAWITEM && NativeFlatTabDrawItem(hwnd,reinterpret_cast<const DRAWITEMSTRUCT*>(lp)))return TRUE;
+    if (msg == BalancedPageRestoreMessage()) { RemoveFlatPropertyRules(hwnd); RestoreBalancedPage(hwnd); RestoreNativePropertyTabSize(hwnd); return 0; }
+    const auto* position=msg==WM_WINDOWPOSCHANGING
+        ? reinterpret_cast<const WINDOWPOS*>(lp) : nullptr;
+    const bool beforeShow=(msg==WM_SHOWWINDOW && wp) ||
+        (position && (position->flags&SWP_SHOWWINDOW));
+    if((beforeShow || msg==WM_PAINT) && !g_settings.RoundedTabPane)
+        PrepareNativePropertyPresentation(hwnd,dwRefData,
+            beforeShow && !IsWindowVisible(hwnd));
+    if (msg == WM_NCDESTROY) { RemoveFlatPropertyRules(hwnd); RestoreBalancedPage(hwnd); RestoreNativePropertyTabSize(hwnd); }
+    if(msg==WM_PAINT && (!g_settings.FlatPropertyPresentation || g_settings.RoundedTabPane)){
+        RemoveFlatPropertyRules(hwnd);RestoreBalancedPage(hwnd);RestoreNativePropertyTabSize(hwnd);
+    }
+    if ((msg == WM_PAINT || msg == WM_PARENTNOTIFY || msg == WM_SHOWWINDOW) &&
+        g_darkModeActive && IsCustomDarkModeAllowed() && ClassicPickerEraseRoot(hwnd))
+        EnumChildWindows(hwnd, ClassicPickerEraseObserveChild, 0);
     if (msg == WM_NCDESTROY) {
         WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, PropertyDialogSubclassProc);
         RemovePropW(hwnd, kPropertyDialogDarkModeMarker);
@@ -49182,17 +51689,15 @@ static LRESULT CALLBACK PropertyDialogSubclassProc(
                     hwnd, reinterpret_cast<HWND>(lp), reinterpret_cast<HDC>(wp)))
                 return reinterpret_cast<LRESULT>(panel);
         }
-        if (IsAppOwnedCtlColorBrush((HBRUSH)own)) {
+        if (IsAppOwnedCtlColorBrush((HBRUSH)own, reinterpret_cast<HWND>(lp))) {
             RememberCtlColorBackground(reinterpret_cast<HDC>(wp),
                 reinterpret_cast<HWND>(lp), (HBRUSH)own);
             return own;
         }
         // Tab pages (inside pane) use pane color; main dialog uses outer color
         bool isPage = (dwRefData == kPropertyPageSubclassId);
-        COLORREF bg = isPage ? kElevatedPaneDark : Win32MainDark;
-        HBRUSH br = isPage
-            ? (g_elevatedPaneDarkBrush ? g_elevatedPaneDarkBrush : (g_elevatedPaneDarkBrush = CreateSolidBrush(kElevatedPaneDark)))
-            : (g_win32MainDarkBrush   ? g_win32MainDarkBrush   : (g_win32MainDarkBrush   = CreateSolidBrush(Win32MainDark)));
+        COLORREF bg = PropertyDialogBackground(isPage);
+        HBRUSH br = GetCachedSolidBrush(PropertyDialogBackground(isPage));
         if (!isPage && FilePickerChromeRoot(hwnd)) {
             bg = FilePickerControlBackground(true);
             br = GetCachedSolidBrush(bg);
@@ -49208,6 +51713,7 @@ static LRESULT CALLBACK PropertyDialogSubclassProc(
         LRESULT orig = DefSubclassProc(hwnd, msg, wp, lp);
         HBRUSH origBr = (HBRUSH)orig;
         bool isGenericBrush = (orig == 0 ||
+            InstallerReplaceBrush(reinterpret_cast<HWND>(lp), origBr) ||
             origBr == GetSysColorBrush(COLOR_WINDOW) ||
             origBr == GetSysColorBrush(COLOR_BTNFACE) ||
             origBr == GetSysColorBrush(COLOR_SCROLLBAR) ||
@@ -49215,11 +51721,11 @@ static LRESULT CALLBACK PropertyDialogSubclassProc(
             origBr == (HBRUSH)GetStockObject(HOLLOW_BRUSH));
         if (!isGenericBrush)
             return orig;
-        if (!g_elevatedPaneDarkBrush)
-            g_elevatedPaneDarkBrush = CreateSolidBrush(kElevatedPaneDark);
+        const COLORREF fieldBackground = dwRefData == kPropertyPageSubclassId
+            ? PropertyPaneDarkShade() : kElevatedPaneDark;
         SetTextColor((HDC)wp, WinUI::Dark::TextFillColorPrimary);
-        SetBkColor((HDC)wp, kElevatedPaneDark);
-        return (LRESULT)g_elevatedPaneDarkBrush;
+        SetBkColor((HDC)wp, fieldBackground);
+        return (LRESULT)GetCachedSolidBrush(fieldBackground);
     }
 
     // DrawThemeParentBackground sends WM_PRINTCLIENT to the parent. The tab
@@ -49253,9 +51759,7 @@ static LRESULT CALLBACK PropertyDialogSubclassProc(
             FillRect(hdc, &rc, own);
             return 0;
         }
-        HBRUSH br = isPage
-            ? (g_elevatedPaneDarkBrush ? g_elevatedPaneDarkBrush : (g_elevatedPaneDarkBrush = CreateSolidBrush(kElevatedPaneDark)))
-            : (g_win32MainDarkBrush   ? g_win32MainDarkBrush   : (g_win32MainDarkBrush   = CreateSolidBrush(Win32MainDark)));
+        HBRUSH br = GetCachedSolidBrush(PropertyDialogBackground(isPage));
         if (!isPage && FilePickerChromeRoot(hwnd)) {
             FilePickerEraseChrome(hdc, rc, true);
             return 0;
@@ -49312,7 +51816,7 @@ static LRESULT CALLBACK PropertyDialogSubclassProc(
 
     case WM_ERASEBKGND: {
         bool isPage = (dwRefData == kPropertyPageSubclassId);
-        COLORREF bg = isPage ? kElevatedPaneDark : Win32MainDark;
+        COLORREF bg = PropertyDialogBackground(isPage);
         HDC hdc = (HDC)wp;
         RECT rc;
         GetClientRect(hwnd, &rc);
@@ -49424,7 +51928,7 @@ static LRESULT CALLBACK FilePickerLightSubclassProc(
         if (g_darkModeActive || !FilePickerChromeRoot(hwnd))
             break;
         const LRESULT own = DefSubclassProc(hwnd, msg, wp, lp);
-        if (IsAppOwnedCtlColorBrush((HBRUSH)own))
+        if (IsAppOwnedCtlColorBrush((HBRUSH)own, reinterpret_cast<HWND>(lp)))
             return own;
         const COLORREF chrome = FilePickerControlBackground(false);
         HBRUSH br = GetCachedSolidBrush(chrome);
@@ -49477,18 +51981,6 @@ static void ApplyPropertyDialogDarkMode(HWND hwnd)
     SetPropW(hwnd, kPropertyDialogDarkModeMarker, (HANDLE)1);
     SetPropW(hwnd, kDarkWindowAppliedMarker, (HANDLE)1);
 
-    BOOL darkAttr = TRUE;
-    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkAttr, sizeof(darkAttr));
-    COLORREF borderClr = RGB(32, 32, 32);
-    DwmSetWindowAttribute(hwnd, 34, &borderClr, sizeof(borderClr));
-    if (g_cbdAllowDark) g_cbdAllowDark(hwnd, true);
-
-    // DarkMode_Explorer: tells DefDlgProc to use dark theme for WM_CTLCOLOR*.
-    // Without this, the dialog returns GetSysColorBrush(COLOR_3DFACE) which
-    // may be a cached light brush depending on timing.
-    if (IsCurrentProcessExplorer())
-        SetWindowTheme(hwnd, L"DarkMode_Explorer", nullptr);
-
     // Nested child dialogs inherit the elevated pane shade; unrelated WS_CHILD
     // dialogs remain on the base background.
     const DWORD_PTR subclassKind =
@@ -49501,6 +51993,18 @@ static void ApplyPropertyDialogDarkMode(HWND hwnd)
         RemovePropW(hwnd, kDarkWindowAppliedMarker);
         return;
     }
+
+    BOOL darkAttr = TRUE;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkAttr, sizeof(darkAttr));
+    COLORREF borderClr = RGB(32, 32, 32);
+    DwmSetWindowAttribute(hwnd, 34, &borderClr, sizeof(borderClr));
+    if (g_cbdAllowDark) g_cbdAllowDark(hwnd, true);
+
+    // DarkMode_Explorer: tells DefDlgProc to use dark theme for WM_CTLCOLOR*.
+    // Without this, the dialog returns GetSysColorBrush(COLOR_3DFACE) which
+    // may be a cached light brush depending on timing.
+    if (IsCurrentProcessExplorer())
+        SetWindowTheme(hwnd, L"DarkMode_Explorer", nullptr);
 
     SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
@@ -49631,6 +52135,9 @@ static void RemoveCustomDarkModeFromWindow(HWND hwnd)
     if (!hwnd || !IsWindow(hwnd))
         return;
 
+    RemoveFlatPropertyRules(hwnd);
+    RestoreBalancedPage(hwnd);
+    RestoreNativePropertyTabSize(hwnd);
     const bool wasDialog = GetPropW(hwnd, kPropertyDialogDarkModeMarker) != nullptr;
     const bool wasWindow = GetPropW(hwnd, kDarkWindowAppliedMarker) != nullptr;
     if (!wasDialog && !wasWindow)
@@ -52349,29 +54856,73 @@ static void ToolbarDoubleBufferRemoveAll()
 // NtUserCreateWindowEx_hook) are one-way GWL_STYLE/GWL_EXSTYLE edits with no
 // live toggle to undo them. Same "nothing the mod changed should still be
 // active once it's gone" rationale as g_treeDoubleBufferOwners/
-// g_toolbarDoubleBufferOwners above -- a tracked set instead of a per-window
-// property (TreeRuntimeSaveAndSetStyleBit) because MMC can have several of
-// these windows open at once, with no existing singleton HWND for
-// Wh_ModUninit to reach them through.
-struct MmcStyleStrip { HWND hwnd; int gwlIndex; LONG_PTR bit; };
+// g_toolbarDoubleBufferOwners above. Records carry a per-window lifetime
+// generation so recycled HWNDs cannot inherit an old restoration. The list
+// lets unload reach every accepted window without relying on a singleton.
+static constexpr wchar_t kMmcStyleGeneration[] = L"W32M.MmcStyleGeneration";
+struct MmcStyleStrip { HWND hwnd; int gwlIndex; LONG_PTR bit; HANDLE generation; };
 static std::mutex g_mmcStyleStripMutex;
 static std::vector<MmcStyleStrip> g_mmcStyleStripped;
+static std::atomic<bool> g_mmcStyleStripsUnloading{false};
+static ULONG_PTR g_mmcStyleNextGeneration = 0;
 
-static void MmcStyleStripTrack(HWND hwnd, int gwlIndex, LONG_PTR bit)
+static bool MmcStyleStripTrack(HWND hwnd, int gwlIndex, LONG_PTR bit)
 {
+    DWORD pid = 0;
+    if (!hwnd || GetWindowThreadProcessId(hwnd, &pid) != GetCurrentThreadId() ||
+        pid != GetCurrentProcessId())
+        return false;
     std::lock_guard<std::mutex> lock(g_mmcStyleStripMutex);
-    g_mmcStyleStripped.push_back({ hwnd, gwlIndex, bit });
+    if (g_mmcStyleStripsUnloading.load(std::memory_order_acquire))
+        return false;
+    HANDLE generation = GetPropW(hwnd, kMmcStyleGeneration);
+    if (!generation) {
+        if (++g_mmcStyleNextGeneration == 0)
+            ++g_mmcStyleNextGeneration;
+        generation = reinterpret_cast<HANDLE>(g_mmcStyleNextGeneration);
+        // Publish ownership before a frame change can reenter or destroy HWND.
+        if (!SetPropW(hwnd, kMmcStyleGeneration, generation))
+            return false;
+    }
+    for (const auto& item : g_mmcStyleStripped) {
+        if (item.hwnd == hwnd && item.gwlIndex == gwlIndex &&
+            item.bit == bit && item.generation == generation)
+            return true;
+    }
+    g_mmcStyleStripped.push_back({ hwnd, gwlIndex, bit, generation });
+    return true;
 }
 
-static void MmcStyleStripRemoveAll()
+static void MmcStyleStripApply(HWND hwnd, int gwlIndex, LONG_PTR bit)
+{
+    const LONG_PTR style = GetWindowLongPtrW(hwnd, gwlIndex);
+    if (!(style & bit) || !MmcStyleStripTrack(hwnd, gwlIndex, bit))
+        return;
+    SetWindowLongPtrW(hwnd, gwlIndex, style & ~bit);
+    SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+        SWP_NOACTIVATE | SWP_FRAMECHANGED);
+}
+
+static void MmcStyleStripBeginUnload()
+{
+    std::lock_guard<std::mutex> lock(g_mmcStyleStripMutex);
+    g_mmcStyleStripsUnloading.store(true, std::memory_order_release);
+}
+
+static void MmcStyleStripRemoveAll(bool unloading = false)
 {
     std::vector<MmcStyleStrip> items;
     {
         std::lock_guard<std::mutex> lock(g_mmcStyleStripMutex);
+        if (unloading)
+            g_mmcStyleStripsUnloading.store(true, std::memory_order_release);
         items.swap(g_mmcStyleStripped);
     }
     for (const auto& item : items) {
-        if (!IsWindow(item.hwnd))
+        // USER can recycle an HWND. Its property disappears with the original
+        // window; a new generation must never inherit the old style record.
+        if (GetPropW(item.hwnd, kMmcStyleGeneration) != item.generation)
             continue;
         LONG_PTR style = GetWindowLongPtrW(item.hwnd, item.gwlIndex);
         if (!(style & item.bit)) {
@@ -52380,6 +54931,11 @@ static void MmcStyleStripRemoveAll()
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
                 SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
+    }
+    // Keep the marker until all style indices owned by that lifetime restored.
+    for (const auto& item : items) {
+        if (GetPropW(item.hwnd, kMmcStyleGeneration) == item.generation)
+            RemovePropW(item.hwnd, kMmcStyleGeneration);
     }
 }
 
@@ -52404,8 +54960,100 @@ static BOOL CALLBACK ToolbarDoubleBufferApplyEnum(HWND hwnd, LPARAM)
     return TRUE;
 }
 
+// Candidate: repaint only physical child-window non-client border pixels.
+// Scrollbars, client contents, geometry and top-level caption frames stay native.
+static bool MmcNativeFrameEligible(HWND window){
+    if(!window || !IsCurrentProcessMMC() || !g_settings.FlatLegacyBorders ||
+       !g_darkModeActive || !IsCustomDarkModeAllowed() || SysHighContrastEnabled())return false;
+    LONG_PTR style=GetWindowLongPtrW(window,GWL_STYLE),ex=GetWindowLongPtrW(window,GWL_EXSTYLE);
+    return (style&WS_CHILD) && ((style&WS_BORDER)||(ex&(WS_EX_CLIENTEDGE|WS_EX_STATICEDGE))) &&
+        !IsClassName(window,L"ScrollBar") && !IsClassName(window,L"Button");
+}
+static bool PaintMmcNativeFrame(HWND window,HDC dc){
+    if(!dc || !MmcNativeFrameEligible(window))return false;
+    RECT outer{},client{};if(!GetWindowRect(window,&outer)||!GetClientRect(window,&client))return false;
+    MapWindowPoints(window,nullptr,reinterpret_cast<POINT*>(&client),2);
+    OffsetRect(&client,-outer.left,-outer.top);
+    const int width=outer.right-outer.left,height=outer.bottom-outer.top;
+    if(width<=0||height<=0)return false;
+    const UINT dpi=GetDpiForWindow(window);
+    const int nominal=(GetWindowLongPtrW(window,GWL_EXSTYLE)&WS_EX_CLIENTEDGE)?2:1;
+    const int rim=(std::max)(1,MulDiv(nominal,dpi,96));
+    const int left=(std::clamp)(static_cast<int>(client.left),0,(std::min)(rim,width));
+    const int right=(std::clamp)(width-static_cast<int>(client.right),0,(std::min)(rim,width));
+    const int top=(std::clamp)(static_cast<int>(client.top),0,(std::min)(rim,height));
+    const int bottom=(std::clamp)(height-static_cast<int>(client.bottom),0,(std::min)(rim,height));
+    if(!left&&!right&&!top&&!bottom)return false;
+    HBRUSH brush=GetCachedSolidBrush(IsInTabbedPropertyPane(window)?PropertyPaneDarkShade():Win32MainDark);
+    if(!brush)return false;
+    if(top){RECT r{0,0,width,top};FillRect_orig(dc,&r,brush);}
+    if(bottom){RECT r{0,height-bottom,width,height};FillRect_orig(dc,&r,brush);}
+    if(left){RECT r{0,0,left,height};FillRect_orig(dc,&r,brush);}
+    if(right){RECT r{width-right,0,width,height};FillRect_orig(dc,&r,brush);}
+    return true;
+}
+
+
+static constexpr wchar_t kMmcNativeFrameSubclass[]=L"W32M.MmcNativeFrame";
+static std::mutex g_mmcNativeFrameMutex;
+static std::unordered_set<HWND> g_mmcNativeFrames;
+static std::atomic<bool> g_mmcNativeFramesUnloading{false};
+static LRESULT CALLBACK MmcNativeFrameSubclass(HWND w,UINT m,WPARAM a,LPARAM b,DWORD_PTR){
+    if(m==WM_NCDESTROY){
+        RemovePropW(w,kMmcNativeFrameSubclass);
+        {std::lock_guard<std::mutex> lock(g_mmcNativeFrameMutex);g_mmcNativeFrames.erase(w);}
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(w,MmcNativeFrameSubclass);
+        return DefSubclassProc(w,m,a,b);
+    }
+    LRESULT result=DefSubclassProc(w,m,a,b);
+    if(!g_mmcNativeFramesUnloading.load(std::memory_order_acquire) && MmcNativeFrameEligible(w)){
+        if(m==WM_NCPAINT || m==WM_NCACTIVATE){
+            HDC dc=GetWindowDC(w);if(dc){PaintMmcNativeFrame(w,dc);ReleaseDC(w,dc);}
+        }else if(m==WM_PRINT && a && (b&PRF_NONCLIENT)){
+            int saved=SaveDC(reinterpret_cast<HDC>(a));
+            if(saved){PaintMmcNativeFrame(w,reinterpret_cast<HDC>(a));RestoreDC(reinterpret_cast<HDC>(a),saved);}
+        }
+    }
+    return result;
+}
+static void MmcNativeFrameInstall(HWND w){
+    if(g_mmcNativeFramesUnloading.load(std::memory_order_acquire) ||
+       !MmcNativeFrameEligible(w) || GetPropW(w,kMmcNativeFrameSubclass))return;
+    if(!WindhawkUtils::SetWindowSubclassFromAnyThread(w,MmcNativeFrameSubclass,0))return;
+    if(!SetPropW(w,kMmcNativeFrameSubclass,reinterpret_cast<HANDLE>(1))){
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(w,MmcNativeFrameSubclass);return;
+    }
+    bool accepted=false;
+    {std::lock_guard<std::mutex> lock(g_mmcNativeFrameMutex);
+     if(!g_mmcNativeFramesUnloading.load(std::memory_order_acquire) && MmcNativeFrameEligible(w)){
+        g_mmcNativeFrames.insert(w);accepted=true;
+     }}
+    if(!accepted){RemovePropW(w,kMmcNativeFrameSubclass);WindhawkUtils::RemoveWindowSubclassFromAnyThread(w,MmcNativeFrameSubclass);return;}
+    RedrawWindow(w,nullptr,nullptr,RDW_INVALIDATE|RDW_FRAME|RDW_NOERASE);
+}
+static void MmcNativeFramesRemoveAll(bool unloading){
+    if(unloading)g_mmcNativeFramesUnloading.store(true,std::memory_order_release);
+    std::vector<HWND> windows;
+    {
+        std::lock_guard<std::mutex> lock(g_mmcNativeFrameMutex);
+        windows.assign(g_mmcNativeFrames.begin(),g_mmcNativeFrames.end());
+        g_mmcNativeFrames.clear();
+    }
+    for(HWND w:windows){
+        if(!RemovePropW(w,kMmcNativeFrameSubclass))continue;
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(w,MmcNativeFrameSubclass);
+        RedrawWindow(w,nullptr,nullptr,RDW_INVALIDATE|RDW_FRAME|RDW_NOERASE);
+    }
+}
+static BOOL CALLBACK MmcNativeFrameApplyChild(HWND w,LPARAM){MmcNativeFrameInstall(w);return TRUE;}
+static BOOL CALLBACK MmcNativeFrameApplyTop(HWND w,LPARAM){
+    DWORD pid=0;GetWindowThreadProcessId(w,&pid);
+    if(pid==GetCurrentProcessId()){MmcNativeFrameInstall(w);EnumChildWindows(w,MmcNativeFrameApplyChild,0);}return TRUE;
+}
+
 static void AuxiliarySubclassCleanup()
 {
+    ClassicPickerEraseRemoveAll();
     StatusBarRemoveAllSubclasses();
     TrackbarRemoveAllSubclasses();
     PaneScrollBarRemoveAllSubclasses();
@@ -52650,7 +55298,8 @@ static void AclChecklistInstall(HWND hwnd)
     if (!WindhawkUtils::SetWindowSubclassFromAnyThread(
             hwnd, AclChecklistSubclassProc, 0))
         return;
-    SetPropW(hwnd, kAclChecklistSubclassProp, (HANDLE)1);
+    if (!SetPropW(hwnd, kAclChecklistSubclassProp, (HANDLE)1))
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, AclChecklistSubclassProc);
 }
 
 // ============================================================================
@@ -53213,6 +55862,153 @@ static void ExplorerSysLinkInstall(HWND hwnd)
     SetPropW(hwnd, kPropExpLinkSubclassed, (HANDLE)1);
 }
 
+// Inno VCL uses reflected CN_CTLCOLOR* (WM_CTLCOLOR* + $BC00), while
+// WixStdBA delegates ordinary WM_CTLCOLOR* to thmutil. Intercept the result
+// AFTER the application handles it; never replace its document format or events.
+static constexpr wchar_t kInstallerAdapterProp[] = L"WH_INSTALLER_ADAPTER";
+static std::atomic<bool> g_installerAdapterUnloading{false};
+static std::mutex g_installerAdapterMutex;
+static std::unordered_set<HWND> g_installerAdapterWindows;
+
+static LRESULT CALLBACK InstallerAdapterSubclass(
+    HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, DWORD_PTR)
+{
+    if (msg == WM_NCDESTROY) {
+        ConsistentCaption(hwnd, false, Win32MainDark);
+        RemovePropW(hwnd, kInstallerAdapterProp);
+        {
+            std::lock_guard<std::mutex> lock(g_installerAdapterMutex);
+            g_installerAdapterWindows.erase(hwnd);
+        }
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, InstallerAdapterSubclass);
+        return DefSubclassProc(hwnd, msg, wp, lp);
+    }
+    const auto engine = InstallerWindowEngine(hwnd);
+    const bool active = engine != InstallerEngine::None && IsCustomDarkModeAllowed() &&
+        !g_installerAdapterUnloading.load(std::memory_order_acquire);
+    const bool root = hwnd == GetAncestor(hwnd, GA_ROOT);
+    if (root && (msg == WM_PAINT || msg == WM_ACTIVATE || msg == WM_THEMECHANGED ||
+                 msg == WM_SETTINGCHANGE))
+        ConsistentCaption(hwnd, active, Win32MainDark);
+
+    // Balanced even for nested SendMessage/paint. All descendants participate,
+    // including unknown ones, which mask an outer adapter's paint context.
+    struct PaintScope {
+        HWND previous;
+        HDC previousDC;
+        explicit PaintScope(HWND owner) : previous(t_installerPaintWindow), previousDC(t_installerNeutralDC) {
+            t_installerPaintWindow = owner; t_installerNeutralDC = nullptr;
+        }
+        ~PaintScope() { t_installerPaintWindow = previous; t_installerNeutralDC = previousDC; }
+    };
+    const bool paint = msg == WM_PAINT || msg == WM_ERASEBKGND ||
+        msg == WM_PRINTCLIENT || msg == WM_PRINT ||
+        (engine == InstallerEngine::Inno && msg == 0xBC00 + WM_DRAWITEM);
+    PaintScope scope(active && paint && InstallerSurfaceControl(hwnd) ? hwnd : nullptr);
+
+    // DefWindowProc can erase WixStdBA's class brush inside user32 without a
+    // public FillRect call. Replace that one neutral solid erase ourselves.
+    // ThemeDrawBackground still draws authored window artwork during WM_PAINT.
+    if (active && root && engine == InstallerEngine::WixStdBA && msg == WM_ERASEBKGND) {
+        HBRUSH brush = reinterpret_cast<HBRUSH>(GetClassLongPtrW(hwnd, GCLP_HBRBACKGROUND));
+        if (reinterpret_cast<ULONG_PTR>(brush) > 0 && reinterpret_cast<ULONG_PTR>(brush) <= 31)
+            brush = GetSysColorBrush(static_cast<int>(reinterpret_cast<ULONG_PTR>(brush)) - 1);
+        if (InstallerReplaceBrush(hwnd, brush)) {
+            RECT rc;
+            if (GetClientRect(hwnd, &rc)) {
+                if (HBRUSH dark = GetCachedSolidBrush(Win32MainDark)) {
+                    FillRect_orig(reinterpret_cast<HDC>(wp), &rc, dark);
+                    return 1;
+                }
+            }
+        }
+    }
+
+    const bool reflected = engine == InstallerEngine::Inno &&
+        msg >= 0xBC00 + WM_CTLCOLORMSGBOX && msg <= 0xBC00 + WM_CTLCOLORSTATIC;
+    const UINT colorMsg = reflected ? msg - 0xBC00 : msg;
+    if (colorMsg >= WM_CTLCOLORMSGBOX && colorMsg <= WM_CTLCOLORSTATIC) {
+        const LRESULT result = DefSubclassProc(hwnd, msg, wp, lp);
+        HWND control = reflected ? hwnd : reinterpret_cast<HWND>(lp);
+        const HBRUSH normalized = active && InstallerSurfaceControl(control)
+            ? GetCachedSolidBrush(Win32MainDark) : nullptr;
+        // A VCL parent can retain our reflected brush while rewriting the DC
+        // colors on its way back. Reapply the whole color contract for that
+        // exact owned brush, not merely for the original pale application brush.
+        if (normalized && (InstallerReplaceBrush(control, reinterpret_cast<HBRUSH>(result)) ||
+                result == reinterpret_cast<LRESULT>(normalized))) {
+            HDC dc = reinterpret_cast<HDC>(wp);
+            if (HBRUSH dark = GetCachedSolidBrush(Win32MainDark)) {
+                const COLORREF text = GetTextColor(dc);
+                // Keep semantic colored text, but replace neutral foregrounds.
+                const int low = std::min({GetRValue(text), GetGValue(text), GetBValue(text)});
+                const int high = std::max({GetRValue(text), GetGValue(text), GetBValue(text)});
+                if (high - low <= 12)
+                    SetTextColor(dc, IsWindowEnabled(control) ? WinUI::Dark::TextFillColorPrimary : RGB(157,157,157));
+                SetBkColor_orig(dc, Win32MainDark);
+                RememberCtlColorBackground(dc, control, dark);
+                return reinterpret_cast<LRESULT>(dark);
+            }
+        }
+        return result;
+    }
+    return DefSubclassProc(hwnd, msg, wp, lp);
+}
+
+static void InstallerAdapterObserve(HWND hwnd)
+{
+    if (!InstallerUiRoot(hwnd)) return;
+    std::lock_guard<std::mutex> lock(g_installerAdapterMutex);
+    if (g_installerAdapterUnloading.load(std::memory_order_acquire) ||
+        GetPropW(hwnd, kInstallerAdapterProp)) return;
+    // No UI-thread message while holding this mutex: installation is done below.
+    if (!SetPropW(hwnd, kInstallerAdapterProp, reinterpret_cast<HANDLE>(1))) return;
+    g_installerAdapterWindows.insert(hwnd);
+}
+
+static BOOL CALLBACK InstallerAdapterInstallChild(HWND hwnd, LPARAM)
+{
+    InstallerAdapterObserve(hwnd);
+    if (GetPropW(hwnd, kInstallerAdapterProp)) {
+        if (!WindhawkUtils::SetWindowSubclassFromAnyThread(hwnd, InstallerAdapterSubclass, 0) ||
+            g_installerAdapterUnloading.load(std::memory_order_acquire)) {
+            WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, InstallerAdapterSubclass);
+            RemovePropW(hwnd, kInstallerAdapterProp);
+            std::lock_guard<std::mutex> lock(g_installerAdapterMutex);
+            g_installerAdapterWindows.erase(hwnd);
+        }
+    }
+    return TRUE;
+}
+
+static BOOL CALLBACK InstallerAdapterInstallRoot(HWND hwnd, LPARAM)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid != GetCurrentProcessId() || !InstallerUiRoot(hwnd)) return TRUE;
+    InstallerAdapterInstallChild(hwnd, 0);
+    EnumChildWindows(hwnd, InstallerAdapterInstallChild, 0);
+    return TRUE;
+}
+
+static void InstallerAdapterUninit()
+{
+    std::vector<HWND> windows;
+    {
+        std::lock_guard<std::mutex> lock(g_installerAdapterMutex);
+        g_installerAdapterUnloading.store(true, std::memory_order_release);
+        windows.assign(g_installerAdapterWindows.begin(), g_installerAdapterWindows.end());
+        g_installerAdapterWindows.clear();
+    }
+    for (HWND hwnd : windows) {
+        if (!RemovePropW(hwnd, kInstallerAdapterProp)) continue;
+        ConsistentCaption(hwnd, false, Win32MainDark);
+        WindhawkUtils::RemoveWindowSubclassFromAnyThread(hwnd, InstallerAdapterSubclass);
+        RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME);
+    }
+}
+
+
 // Deferred: at 1ms children exist. Property sheets have SysTabControl32.
 // Per-control dark mode at creation time (same pattern as TryApplyToWindow_Regedit).
 // Called from NtUserCreateWindowEx_hook for EVERY window in Explorer.
@@ -53224,11 +56020,38 @@ using NtUserCreateWindowEx_t = HWND(WINAPI*)(DWORD, VOID*, LPCWSTR, VOID*, DWORD
     LONG, LONG, HWND, HMENU, HINSTANCE, LPVOID, DWORD, DWORD, DWORD, VOID*);
 NtUserCreateWindowEx_t NtUserCreateWindowEx_orig = nullptr;
 
+// XAML hosts keep the menu-only fast path. Observe native creation without
+// entering the normal font, widget, dialog-staging or theme initialization.
+static HWND WINAPI OpeningNtUserCreateWindowEx_hook(DWORD dwExStyle, VOID* pClassName, LPCWSTR lpWindowName,
+    VOID* pTitleName, DWORD dwStyle, LONG X, LONG Y, LONG nWidth, LONG nHeight,
+    HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam,
+    DWORD dwShowCmd, DWORD dwFlags1, DWORD dwFlags2, VOID* qwFlags)
+{
+    const DWORD incomingError=GetLastError();
+    static thread_local bool installingOpeningHook=false;
+    if((g_settings.DisableWindowOpeningAnimations || ConsistentCaptionTrackingEnabled()) && !installingOpeningHook){
+        installingOpeningHook=true;
+        InstallCbtHookForThread();
+        installingOpeningHook=false;
+    }
+    SetLastError(incomingError);
+    return NtUserCreateWindowEx_orig(dwExStyle,pClassName,lpWindowName,pTitleName,
+        dwStyle,X,Y,nWidth,nHeight,hWndParent,hMenu,hInstance,lpParam,
+        dwShowCmd,dwFlags1,dwFlags2,qwFlags);
+}
+
+
 HWND WINAPI NtUserCreateWindowEx_hook(DWORD dwExStyle, VOID* pClassName, LPCWSTR lpWindowName,
     VOID* pTitleName, DWORD dwStyle, LONG X, LONG Y, LONG nWidth, LONG nHeight,
     HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam,
     DWORD dwShowCmd, DWORD dwFlags1, DWORD dwFlags2, VOID* qwFlags)
 {
+    static thread_local bool installingOpeningHook=false;
+    if((g_settings.DisableWindowOpeningAnimations || ConsistentCaptionTrackingEnabled()) && !installingOpeningHook){
+        installingOpeningHook=true;
+        InstallCbtHookForThread();
+        installingOpeningHook=false;
+    }
     HWND hwnd = NtUserCreateWindowEx_orig(dwExStyle, pClassName, lpWindowName, pTitleName,
         dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam,
         dwShowCmd, dwFlags1, dwFlags2, qwFlags);
@@ -53242,6 +56065,19 @@ HWND WINAPI NtUserCreateWindowEx_hook(DWORD dwExStyle, VOID* pClassName, LPCWSTR
     wchar_t cls[32] = {};
     GetClassNameW(hwnd, cls, ARRAYSIZE(cls));
     LazyFeatureObserveWindow(hwnd, cls);
+    // Font/theme messages can erase controls immediately. Attach the scoped
+    // picker backing before sending any of those messages.
+    if (IsCustomDarkModeAllowed()) {
+        ClassicPickerEraseObserveChild(hwnd, 0);
+        // The namespace tree completes picker identification. Back existing
+        // host surfaces now, before the root's first paint/late catch-up.
+        if (IsClassName(hwnd, L"NamespaceTreeControl")) {
+            if (HWND picker = ClassicPickerEraseRoot(hwnd))
+                EnumChildWindows(picker, ClassicPickerEraseObserveChild, 0);
+        }
+    }
+    NativeUiFontObserve(hwnd, cls);
+    InstallerAdapterInstallChild(hwnd, 0);
 
     const bool isDirectUi = _wcsicmp(cls, L"DirectUIHWND") == 0;
     const bool isShellDefView = _wcsicmp(cls, L"SHELLDLL_DefView") == 0;
@@ -53279,6 +56115,7 @@ HWND WINAPI NtUserCreateWindowEx_hook(DWORD dwExStyle, VOID* pClassName, LPCWSTR
 
     ApplySingleLinePropertyTabsForWindow(hwnd);
 
+    MmcNativeFrameInstall(hwnd);
     // MMC's rebar (SizeableRebar, an MFC-docking-bar class name, not
     // comctl32's own ReBarWindow32) draws thick top/bottom band borders via
     // RBS_BANDBORDERS. Strip the style bit so comctl32 stops drawing them at
@@ -53289,14 +56126,7 @@ HWND WINAPI NtUserCreateWindowEx_hook(DWORD dwExStyle, VOID* pClassName, LPCWSTR
     // hang in third-party MFC apps, which MMC snap-ins often are.
     if (g_darkModeActive && IsCurrentProcessMMC() &&
         (_wcsicmp(cls, L"SizeableRebar") == 0 || _wcsicmp(cls, L"ReBarWindow32") == 0)) {
-        LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-        if (style & RBS_BANDBORDERS) {
-            SetWindowLongPtrW(hwnd, GWL_STYLE, style & ~(LONG_PTR)RBS_BANDBORDERS);
-            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-                SWP_NOACTIVATE | SWP_FRAMECHANGED);
-            MmcStyleStripTrack(hwnd, GWL_STYLE, RBS_BANDBORDERS);
-        }
+        MmcStyleStripApply(hwnd, GWL_STYLE, RBS_BANDBORDERS);
     }
 
     // MMCOCXViewWindow (the OCX-hosted snap-in view area) gets a classic
@@ -53304,14 +56134,7 @@ HWND WINAPI NtUserCreateWindowEx_hook(DWORD dwExStyle, VOID* pClassName, LPCWSTR
     // colors regardless of dark mode. Strip it.
     if (g_darkModeActive && IsCurrentProcessMMC() &&
         _wcsicmp(cls, L"MMCOCXViewWindow") == 0) {
-        LONG_PTR exStyle = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-        if (exStyle & WS_EX_CLIENTEDGE) {
-            SetWindowLongPtrW(hwnd, GWL_EXSTYLE, exStyle & ~(LONG_PTR)WS_EX_CLIENTEDGE);
-            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-                SWP_NOACTIVATE | SWP_FRAMECHANGED);
-            MmcStyleStripTrack(hwnd, GWL_EXSTYLE, WS_EX_CLIENTEDGE);
-        }
+        MmcStyleStripApply(hwnd, GWL_EXSTYLE, WS_EX_CLIENTEDGE);
     }
 
     // TBSTYLE_FLAT toolbars in MMC paint their own COMMONPROPS background
@@ -53322,14 +56145,7 @@ HWND WINAPI NtUserCreateWindowEx_hook(DWORD dwExStyle, VOID* pClassName, LPCWSTR
     // GetSysColor(Brush)_hook already colors correctly.
     if (g_darkModeActive && IsCurrentProcessMMC() &&
         _wcsicmp(cls, L"ToolbarWindow32") == 0) {
-        LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-        if (style & TBSTYLE_FLAT) {
-            SetWindowLongPtrW(hwnd, GWL_STYLE, style & ~(LONG_PTR)TBSTYLE_FLAT);
-            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-                SWP_NOACTIVATE | SWP_FRAMECHANGED);
-            MmcStyleStripTrack(hwnd, GWL_STYLE, TBSTYLE_FLAT);
-        }
+        MmcStyleStripApply(hwnd, GWL_STYLE, TBSTYLE_FLAT);
     }
 
     // The DefView itself exists before its DirectUI child and may gain
@@ -54092,6 +56908,10 @@ static Settings LoadSettings()
 {
     Settings next{};
     next.GeneralSection   = Wh_GetIntSetting(L"GeneralSection.Enabled");
+    next.DisableWindowOpeningAnimations = next.GeneralSection &&
+        Wh_GetIntSetting(L"GeneralSection.DisableWindowOpeningAnimations");
+    next.ConsistentUIFonts = next.GeneralSection &&
+        Wh_GetIntSetting(L"GeneralSection.ConsistentUIFonts");
     next.ModernInsert     = Wh_GetIntSetting(L"GeneralSection.ModernInsertMark");
     {
         auto s = WindhawkUtils::StringSetting(Wh_GetStringSetting(L"GeneralSection.InsertMarkColor"));
@@ -54106,6 +56926,7 @@ static Settings LoadSettings()
         auto sv = WindhawkUtils::StringSetting(Wh_GetStringSetting(L"GeneralSection.ModernFocusRect"));
         const wchar_t* sp = sv;
         if (wcscmp(sp, L"modern") == 0) next.ModernFocusRect = 0;
+        else if (wcscmp(sp, L"native") == 0) next.ModernFocusRect = -1;
         else if (wcscmp(sp, L"hidden") == 0)    next.ModernFocusRect = 1;
         else                                     next.ModernFocusRect = 0;
     }
@@ -54140,17 +56961,30 @@ static Settings LoadSettings()
         else if (wcscmp(style, L"square") == 0) { next.MenuCornerStyle = 1; next.CbCornerStyle = 1; }
         else                                    { next.MenuCornerStyle = 2; next.CbCornerStyle = 3; }
     }
+
+    {
+        wchar_t path[MAX_PATH]{};GetModuleFileNameW(nullptr,path,ARRAYSIZE(path));
+        const wchar_t* name=wcsrchr(path,L'\\');
+        auto targets=WindhawkUtils::StringSetting(Wh_GetStringSetting(L"GeneralSection.OpeningAnimationProcesses"));
+        next.OpeningAnimationProcessTarget=InstallerProcessMatches(name?name+1:path,targets.get());
+        auto scope=WindhawkUtils::StringSetting(Wh_GetStringSetting(L"GeneralSection.OpeningAnimationScope"));
+        next.OpeningAnimationAllApplications=wcscmp(scope,L"application_windows")==0;
+    }
     next.MenuHoverRadius    = Wh_GetIntSetting(L"GeneralSection.MenuHoverRadius");
     next.RoundedButtons   = Wh_GetIntSetting(L"GeneralSection.RoundedButtons");
     next.AccentGradients  = Wh_GetIntSetting(L"GeneralSection.AccentGradients");
     next.ModernSeparators = Wh_GetIntSetting(L"GeneralSection.ModernSeparators");
+    next.FlatLegacyBorders = next.GeneralSection && Wh_GetIntSetting(L"GeneralSection.FlatLegacyBorders");
     {
         next.RoundedTabPane = FALSE;
         auto mode = WindhawkUtils::StringSetting(
             Wh_GetStringSetting(L"GeneralSection.RoundedTabPane"));
+        next.FlatPropertyPresentation = next.GeneralSection && wcscmp(mode,L"flat")==0;
         if (wcscmp(mode, L"winui") == 0 || wcscmp(mode, L"winui_single") == 0) {
             next.RoundedTabPane = TRUE;
             next.SingleLinePropertyTabs = wcscmp(mode, L"winui_single") == 0;
+        } else if (wcscmp(mode,L"flat")==0) {
+            next.SingleLinePropertyTabs = TRUE;
         } else if (wcscmp(mode, L"native") != 0) {
             next.RoundedTabPane = wcscmp(mode, L"1") == 0 ||
                 _wcsicmp(mode, L"true") == 0;
@@ -54159,6 +56993,16 @@ static Settings LoadSettings()
         }
     }
     next.EnableDarkMode      = Wh_GetIntSetting(L"GeneralSection.EnableDarkMode");
+    next.InstallerUi = Wh_GetIntSetting(L"GeneralSection.InstallerUi");
+    {
+        wchar_t processPath[MAX_PATH] = {};
+        GetModuleFileNameW(nullptr, processPath, ARRAYSIZE(processPath));
+        const wchar_t* name = wcsrchr(processPath, L'\\');
+        auto targets = WindhawkUtils::StringSetting(
+            Wh_GetStringSetting(L"GeneralSection.InstallerUiProcesses"));
+        next.InstallerUiProcessTarget = InstallerProcessMatches(
+            name ? name + 1 : processPath, targets.get());
+    }
     // DarkMode is automatic (follows system)
     {
         auto hex = WindhawkUtils::StringSetting(Wh_GetStringSetting(L"GeneralSection.CustomAccentColor"));
@@ -54290,7 +57134,8 @@ static Settings LoadSettings()
     next.ShellTextDirectWrite =
         Wh_GetIntSetting(L"ExplorerSection.ShellTextDirectWrite");
     next.DialogTextDirectWrite = IsCurrentProcessExplorer() &&
-        Wh_GetIntSetting(L"ExplorerSection.DialogTextDirectWrite");
+        (next.ConsistentUIFonts ||
+         Wh_GetIntSetting(L"ExplorerSection.DialogTextDirectWrite"));
     {
         auto s = WindhawkUtils::StringSetting(Wh_GetStringSetting(L"ExplorerSection.GlyphColor"));
         next.GlyphColor = CLR_INVALID;
@@ -54338,6 +57183,7 @@ static Settings LoadSettings()
         next.RoundedTabPane = FALSE;
         next.SingleLinePropertyTabs = FALSE;
         next.EnableDarkMode = FALSE;
+        next.InstallerUi = FALSE;
         next.CustomAccentColor = 0;
         next.CustomAccentColorSet = false;
     }
@@ -54346,6 +57192,8 @@ static Settings LoadSettings()
     // gate so they inherit it, and before the MMC override below so that
     // override keeps its narrow meaning.
     next.EditFocusLine = next.RoundedButtons;
+    next.EditBottomLine = next.EditFocusLine &&
+        Wh_GetIntSetting(L"GeneralSection.EditBottomLine");
     next.AnimatedArrows = next.RoundedButtons;
     next.RemoveTreeLines = next.ModernSeparators;
 
@@ -54372,7 +57220,7 @@ static Settings LoadSettings()
         next.ColorNavIconMode = 0;
         next.ColorNavIcons = FALSE;
         next.ModernizeShellIcons = FALSE;
-        next.ModernShortcutOverlay = FALSE;
+        // Shortcut arrows retain their own persisted switch independently.
         next.ShellTextDirectWrite = FALSE;
         next.DialogTextDirectWrite = FALSE;
         next.DiskChartAccentColor = FALSE;
@@ -57695,7 +60543,8 @@ static void FilePickerChromeAfterDuiBg(HWND paintHwnd, HDC hdc,
     COLORREF color;
     if (pRect->left == 0 && pRect->bottom == t_filePickerBandBottom &&
         pRect->right >= t_filePickerHostWidth) {
-        color = FilePickerChromeColor(g_darkModeActive);
+        color = g_darkModeActive ? FilePickerControlBackground(true)
+                                 : FilePickerChromeColor(false);
     } else if (t_filePickerViewLeft > 0 && pRect->left >= 0 &&
                pRect->left < t_filePickerViewLeft &&
                pRect->right == t_filePickerViewLeft &&
@@ -57707,8 +60556,16 @@ static void FilePickerChromeAfterDuiBg(HWND paintHwnd, HDC hdc,
     RECT fill = *pRect;
     if (pClipRect && !IntersectRect(&fill, &fill, pClipRect))
         return;
-    if (HBRUSH br = GetCachedSolidBrush(color))
+    if (g_darkModeActive && pRect->left == 0 &&
+        pRect->bottom == t_filePickerBandBottom &&
+        pRect->right >= t_filePickerHostWidth && FilePickerMicaActive()) {
+        const DWORD opaque = 0xFF000000u |
+            (static_cast<DWORD>(GetRValue(color)) << 16) |
+            (static_cast<DWORD>(GetGValue(color)) << 8) | GetBValue(color);
+        WriteExplorerMicaPixels(hdc, fill, opaque);
+    } else if (HBRUSH br = GetCachedSolidBrush(color)) {
         FillRect_orig(hdc, &fill, br);
+    }
 }
 
 static void FilePickerSeparatorsEndPaint(HWND hwnd, const PAINTSTRUCT* paintStruct)
@@ -57935,7 +60792,10 @@ VOID DUI_STDCALL DuiElement_Paint_hook(void* self, HDC hdc,
     MarkControlPanelModulePaint(idName);
     ShellCheckAnim::OnElementPaint(self);
     g_duiPaintElement = self;
-    DuiElement_Paint_orig(self, hdc, updateRect, clipRect, contentRect, childrenRect);
+    {
+        NativeIconLabelPaintScope nativeLabels(hdc);
+        DuiElement_Paint_orig(self, hdc, updateRect, clipRect, contentRect, childrenRect);
+    }
     StatusWidth::AfterElementPaint(statusWidthRects);
     if (statusBarState.captured)
         g_pendingExplorerMicaStatusBarPaintState = statusBarState;
@@ -57950,6 +60810,8 @@ VOID DUI_STDCALL DuiElement_Paint_hook(void* self, HDC hdc,
 static bool IsDuiExplorerTextElement(
     void* element, HDC hdc, LONG* weightBoost, HDC* rasterDC)
 {
+    if(NativeIconLabelText(hdc))return false;
+
     *rasterDC = nullptr;
     if (weightBoost)
         *weightBoost = 0;
@@ -61192,9 +64054,16 @@ static constexpr ShellIconEntry kShellIcons[] = {
     { 63011, 28.0030757189f, 28.0040599108f, kShellIcon63011Parts, ARRAYSIZE(kShellIcon63011Parts), kShellIcon63011Svg },
 };
 
-static constexpr char kShortcutSvgLight40[] = R"SVG(<svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><defs><linearGradient id="Gradiente_sem_nome_67" x1="4.822057191475324" y1="18.061209900202812" x2="6.48024463853285" y2="24.155757315030964" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".100000001490116"/></linearGradient><linearGradient id="Gradiente_sem_nome_14" x1="9.298390566972557" y1="20.829764263145989" x2="3.34863107179011" y2="26.648903891164498" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#62acef"/><stop offset="1" stop-color="#3789ce"/></linearGradient></defs><g><path d="M1.03857421875,18.05078125h10.57177734375c.187025892089276,0,.3388671875.151841295410726.3388671875.3388671875v10.57177734375c0,.186756402331223-.151622503918778.33837890625-.33837890625.33837890625H1.0390625c-.187025892089275,0-.3388671875-.151841295410726-.3388671875-.3388671875v-10.57177734375c0-.186756402331223.151622503918778-.33837890625.33837890625-.33837890625Z" style="fill: #eee; opacity: .95;"/><path d="M11.249277114868164,18.750722885131836v9.84928035736084H1.399996757507324v-9.84928035736084h9.84928035736084ZM11.610635757446289,17.350723266601562H1.038636207580566C.46501636505127,17.350723266601562-.000003814697266,17.815744400024414-.000003814697266,18.389364242553711v10.571999549865723C-.000003814697266,29.53498363494873.46501636505127,30.000003814697266,1.038636207580566,30.000003814697266h10.571999549865723c.573619842529297,0,1.038640975952148-.465020179748535,1.038640975952148-1.038640022277832v-10.571999549865723c0-.573619842529297-.465021133422852-1.038640975952148-1.038640975952148-1.038640975952148h0Z" style="fill: #e5e5e5;"/></g><path d="M3.949923857012436,27.13703234269633c-.086557585754235,0-.172013929959576-.01717936816749-.254166549519141-.051097607876727-.083033612797408-.033037246470485-.159239527991303-.083694357728746-.226415262482988-.150649843908468-.066955486181541-.066955486181541-.117612597437073-.143601897996632-.150649843908468-.22729625572174-.032156253231733-.080610881390385-.048454628156833-.166067225594816-.048895124777118-.252845059660103,0-.08765882730404.0162983749251-.172674674890004.048454628157742-.25416654952096.032816998161252-.083694357725108.083253861107551-.159900272919913.150209347289092-.226855759101454l3.802807317149018-3.802366820527823-2.617210665451239-.004845462817684c-.184568083618615,0-.346230343017851-.068276976040579-.480141315381843-.202187948403662-.06387200984409-.063431513224714-.114088624480246-.138756435180767-.148667609120821-.223772282764912-.033697991400913-.083253861110279-.050657111255532-.169591198551643-.050657111255532-.256809529237216,0-.087218330683754.016959119854619-.17311517151029.049996366326013-.255928535996645.033918239711966-.084134854345393.083914606037069-.159459776301446.148887857430054-.224212779385198.063211264915481-.063431513224714.139196931799233-.113207631240584.225534269245145-.146685374331355.08391460603616-.032596749852019.16937095024241-.049335621397404.253946301208089-.049335621397404l4.256739083664797.003964469575294c.084134854346303,0,.169591198551643.016738871545385.254607046137608.049776118017689.086117089134859.033477743090771.162102756018612.082813364488175.225974765862702.146685374333174.131928737576345.132148985883759.198884223757887.294692238521748.199324720377263.483665288338671l.003964469577113,4.25607833873255c.000220248309233.088539820544611-.016518623236152.175758151228365-.049996366327832.25857151571654-.033697991400004.083694357726927-.083694357726017.159459776301446-.148667609119002.224653276005483-.067395982801827.066955486179722-.143601897996632.117612597437983-.22663551079313.150209347288182-.082372867868798.032156253231733-.167608963763996.048454628158652-.253505804588713.048454628158652-.089200565472311-.000440496620286-.175758151228365-.018500858024709-.258131019096254-.053300090974517-.081932371248513-.035239729568275-.156596548274138-.085896840824716-.222450792906784-.151530837149039-.062550519984143-.062991016604428-.111665893072313-.136113455459054-.146244877711979-.217605330091828-.035019481259951-.082372867864251-.052859594353322-.169591198551643-.053300090973607-.259893005571939l-.002422731408842-2.613906940803645-3.801926323908447,3.801926323909356c-.066294741252932.066074492942789-.142500656446828.117172100819516-.22663551079404.151530837149039-.083474109417693.033037246470485-.168710205312891.049776118017689-.253726052898855.049776118017689Z" style="fill: url(#Gradiente_sem_nome_67);"/><path d="M3.862265029710215,26.893878208666138c-.086557585756964,0-.172013929961395-.017179368163852-.25416654952005-.051097607874908-.083033612797408-.033037246470485-.159239527991303-.083694357726927-.226415262482988-.150649843908468-.066955486181541-.06695548618336-.117612597437073-.143601897994813-.150649843908468-.227296255723559-.032156253232642-.081491874629137-.048674876467885-.166948218833568-.048674876467885-.25328555627857-.000220248309233-.085896840824716.016078126616776-.171353185030966.048234379848509-.253726052900674.032816998161252-.083694357726927.083253861107551-.159900272921732.150209347288182-.226855759101454l3.802807317150837-3.802366820527823-2.617210665452149-.004845462817684c-.184568083619524,0-.34623034301876-.068276976040579-.480141315382753-.202187948403662-.064312506463466-.064312506463466-.114529121099622-.1396374284177-.148667609119912-.223772282764912-.03347774309168-.082813364488175-.050657111256442-.169150701931358-.050657111256442-.256809529235397,0-.087218330683754.016959119855528-.173555668128756.050216614637066-.255928535998464.033477743090771-.084134854345393.083474109416784-.159459776299627.148667609120821-.224212779385198.063211264913662-.063431513224714.139196931798324-.113207631242403.225534269243326-.146685374331355.084134854346303-.032596749853838.169591198551643-.049335621397404.253946301208998-.049335621397404l4.256739083663888.003964469577113c.084134854347212,0,.169591198552553.016738871543566.254607046138517.04977611801587.086117089134859.033477743090771.162102756019522.082813364488175.225974765862702.146685374333174.132148985884669.132148985883759.199324720377263.295132735143852.199324720377263.483665288336852l.003964469576204,4.256078338736188c.000220248311052.088539820542792-.016518623235243.175758151228365-.049996366326923.258571515714721-.033697991400913.083694357726927-.083694357726017.159459776301446-.148667609119912.224653276005483-.06761623111197.066955486181541-.143822146304956.117612597436164-.226855759103273.150209347286363-.082152619557746.032156253233552-.167388715453853.048454628160471-.25328555627857.048454628160471-.089200565472311-.000440496622105-.175758151227456-.018500858024709-.258131019096254-.053300090974517-.081932371248513-.035239729570094-.156596548273228-.085896840824716-.222450792906784-.151530837149039-.062550519985052-.062991016602609-.111665893072313-.136113455460873-.146244877711979-.217605330090009-.035239729568275-.082372867867889-.053079842663465-.170031695171929-.053079842663465-.260333502192225l-.002642979718075-2.613466444183359-3.801926323910266,3.801926323907537c-.066514989562165.066514989563075-.142720904755151.117172100819516-.226855759101454.151530837149039-.083253861107551.033037246470485-.168489957003658.04977611801587-.253505804588713.04977611801587Z" style="fill: url(#Gradiente_sem_nome_14);"/></svg>)SVG";
+static constexpr char kShortcutSvgLight40[] =
+    R"SVG(<svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><defs><linearGradient id="Gradiente_sem_nome_67" x1="4.822057191475324" y1="18.061209900202812" x2="6.48024463853285" y2="24.155757315030964" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".100000001490116"/></linearGradient><linearGradient id="Gradiente_sem_nome_14" x1="9.298390566972557" y1="20.829764263145989" x2="3.34863107179011" y2="26.648903891164498" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#62acef"/><stop offset="1" stop-color="#3789ce"/></linearGradient></defs><g><path d="M1.03857421875,18.05078125h10.57177734375c.187025892089276,0,.3388671875.151841295410726.3388671875.3388671875v10.57177734375c0,.186756402331223-.151622503918778.33837890625-.33837890625.33837890625H1.0390625c-.187025892089275,0-.3388671875-.151841295410726-.3388671875-.3388671875v-10.57177734375c0-.186756402331223.151622503918778-.33837890625.33837890625-.33837890625Z" style="fill: #eee; opacity: .95;"/><path d="M11.249277114868164,18.750722885131836v9.84928035736084H1.399996757507324v-9.84928035736084h9.84928035736084ZM11.610635757446289,17.350723266601562H1.038636207580566C.46501636505127,17.350723266601562-.000003814697266,17.815744400024414-.000003814697266,18.389364242553711v10.571999549865723C-.000003814697266,29.53498363494873.46501636505127,30.000003814697266,1.038636207580566,30.000003814697266h10.571999549865723c.573619842529297,0,1.038640975952148-.465020179748535,1.038640975952148-1.038640022277832v-10.571999549865723c0-.573619842529297-.465021133422852-1.038640975952148-1.038640975952148-1.038640975952148h0Z" style="fill: #e5e5e5;"/></g><path d="M3.949923857012436,27.13703234269633c-.086557585754235,0-.172013929959576-.01717936816749-.254166549519141-.051097607876727-.083033612797408-.033037246470485-.159239527991303-.083694357728746-.226415262482988-.150649843908468-.066955486181541-.066955486181541-.117612597437073-.143601897996632-.150649843908468-.22729625572174-.032156253231733-.080610881390385-.048454628156833-.166067225594816-.048895124777118-.252845059660103,0-.08765882730404.0162983749251-.172674674890004.048454628157742-.25416654952096.032816998161252-.083694357725108.083253861107551-.159900272919913.150209347289092-.226855759101454l3.802807317149018-3.802366820527823-2.61721066545)SVG"
+    R"SVG(1239-.004845462817684c-.184568083618615,0-.346230343017851-.068276976040579-.480141315381843-.202187948403662-.06387200984409-.063431513224714-.114088624480246-.138756435180767-.148667609120821-.223772282764912-.033697991400913-.083253861110279-.050657111255532-.169591198551643-.050657111255532-.256809529237216,0-.087218330683754.016959119854619-.17311517151029.049996366326013-.255928535996645.033918239711966-.084134854345393.083914606037069-.159459776301446.148887857430054-.224212779385198.063211264915481-.063431513224714.139196931799233-.113207631240584.225534269245145-.146685374331355.08391460603616-.032596749852019.16937095024241-.049335621397404.253946301208089-.049335621397404l4.256739083664797.003964469575294c.084134854346303,0,.169591198551643.016738871545385.254607046137608.049776118017689.086117089134859.033477743090771.162102756018612.082813364488175.225974765862702.146685374333174.131928737576345.132148985883759.198884223757887.294692238521748.199324720377263.483665288338671l.003964469577113,4.25607833873255c.000220248309233.088539820544611-.016518623236152.175758151228365-.049996366327832.25857151571654-.033697991400004.083694357726927-.083694357726017.159459776301446-.148667609119002.224653276005483-.067395982801827.066955486179722-.143601897996632.117612597437983-.22663551079313.150209347288182-.082372867868798.032156253231733-.167608963763996.048454628158652-.253505804588713.048454628158652-.089200565472311-.000440496620286-.175758151228365-.018500858024709-.258131019096254-.053300090974517-.081932371248513-.035239729568275-.156596548274138-.085896840824716-.222450792906784-.151530837149039-.062550519984143-.062991016604428-.111665893072313-.136113455459054-.146244877711979-.217605330091828-.035019481259951-.082372867864251-.052859594353322-.169591198551643-.053300090973607-.259893005571939l-.002422731408842-2.613906940803645-3.801926323908447,3.801926323909356c-.066294741252932.066074492942789-.142500656446828.117172100819516-.22663551079404.151530837149039-.083474109417693.033037246470485-.168710205312891.049776118017689-.253726052898855.049776118017689Z" style="fill: url(#Gradiente_sem_nome_67);"/><path d="M3.862265029710215,26.893878208666138c-.086557585756964,0-.172013929961395-.017179368163852-.25416654952005-.051097607874908-.083033612797408-.033037246470485-.159239527991303-.083694357726927-.226415262482988-.150649843908468-.066955486)SVG"
+    R"SVG(181541-.06695548618336-.117612597437073-.143601897994813-.150649843908468-.227296255723559-.032156253232642-.081491874629137-.048674876467885-.166948218833568-.048674876467885-.25328555627857-.000220248309233-.085896840824716.016078126616776-.171353185030966.048234379848509-.253726052900674.032816998161252-.083694357726927.083253861107551-.159900272921732.150209347288182-.226855759101454l3.802807317150837-3.802366820527823-2.617210665452149-.004845462817684c-.184568083619524,0-.34623034301876-.068276976040579-.480141315382753-.202187948403662-.064312506463466-.064312506463466-.114529121099622-.1396374284177-.148667609119912-.223772282764912-.03347774309168-.082813364488175-.050657111256442-.169150701931358-.050657111256442-.256809529235397,0-.087218330683754.016959119855528-.173555668128756.050216614637066-.255928535998464.033477743090771-.084134854345393.083474109416784-.159459776299627.148667609120821-.224212779385198.063211264913662-.063431513224714.139196931798324-.113207631242403.225534269243326-.146685374331355.084134854346303-.032596749853838.169591198551643-.049335621397404.253946301208998-.049335621397404l4.256739083663888.003964469577113c.084134854347212,0,.169591198552553.016738871543566.254607046138517.04977611801587.086117089134859.033477743090771.162102756019522.082813364488175.225974765862702.146685374333174.132148985884669.132148985883759.199324720377263.295132735143852.199324720377263.483665288336852l.003964469576204,4.256078338736188c.000220248311052.088539820542792-.016518623235243.175758151228365-.049996366326923.258571515714721-.033697991400913.083694357726927-.083694357726017.159459776301446-.148667609119912.224653276005483-.06761623111197.066955486181541-.143822146304956.117612597436164-.226855759103273.150209347286363-.082152619557746.032156253233552-.167388715453853.048454628160471-.25328555627857.048454628160471-.089200565472311-.000440496622105-.175758151227456-.018500858024709-.258131019096254-.053300090974517-.081932371248513-.035239729570094-.156596548273228-.085896840824716-.222450792906784-.151530837149039-.062550519985052-.062991016602609-.111665893072313-.136113455460873-.146244877711979-.217605330090009-.035239729568275-.082372867867889-.053079842663465-.170031695171929-.053079842663465-.260333502192225l-.002642979718075-2.613466444183359-3.801926323910266,3.801926323907537c-.066514989562165.066514989563075-.142720904755151)SVG"
+    R"SVG(.117172100819516-.226855759101454.151530837149039-.083253861107551.033037246470485-.168489957003658.04977611801587-.253505804588713.04977611801587Z" style="fill: url(#Gradiente_sem_nome_14);"/></svg>)SVG";
 
-static constexpr char kShortcutSvgLight64[] = R"SVG(<svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><linearGradient id="Gradiente_sem_nome_67" x1="6.327525932087156" y1="25.731821991599645" x2="10.003657840150883" y2="39.243177572426092" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".100000001490116"/></linearGradient><linearGradient id="Gradiente_sem_nome_79" x1="16.251368970464682" y1="31.86959070458397" x2="3.061002124805869" y2="44.770378792207502" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#62acef"/><stop offset="1" stop-color="#3789ce"/></linearGradient></defs><g><rect x=".4951171875" y="29.0908203125" width="18.41357421875" height="18.4140625" rx="1.09814453125" ry="1.09814453125" style="fill: #eee; opacity: .95;"/><path d="M17.810600280761719,29.586139678955078c.332639694213867,0,.603260040283203.270620346069336.603260040283203.603260040283203v16.217340230941772c0,.332640051841736-.270620346069336.603259980678558-.603260040283203.603259980678558H1.593260049819946c-.332640051841736,0-.603259980678558-.270619928836823-.603259980678558-.603259980678558v-16.217340230941772c0-.332639694213867.270619928836823-.603260040283203.603259980678558-.603260040283203h16.217340230941772ZM17.810600280761719,28.596139907836914H1.593260049819946C.713330030441284,28.596139907836914.000000046081368,29.309469223022461.000000046081368,30.189399719238281v16.217340230941772C.000000046081368,47.286669969558716.713330030441284,47.999999953917722,1.593260049819946,47.999999953917722h16.217340230941772c.87993049621582,0,1.593259811401367-.713329984359007,1.593259811401367-1.593260003737669v-16.217340230941772c0-.87993049621582-.713329315185547-1.593259811401367-1.593259811401367-1.593259811401367h0Z" style="fill: #e5e5e5;"/></g><path d="M4.39404296875,45.8525390625c-.19189453125,0-.38134765625-.0380859375-.5634765625-.11328125-.18408203125-.0732421875-.35302734375-.185546875-.501953125-.333984375-.1484375-.1484375-.2607421875-.318359375-.333984375-.50390625-.0712890625-.1787109375-.107421875-.3681640625-.1083984375-.560546875,0-.1943359375.0361328125-.3828125.107421875-.5634765625.07275390625-.185546875.1845703125-.3544921875.3330078125-.5029296875l8.4306640625-8.4296875-5.80224609375-.0107421875c-.4091796875,0-.767578125-.1513671875-1.064453125-.4482421875-.1416015625-.140625-.2529296875-.3076171875-.32958984375-.49609375-.07470703125-.1845703125-.1123046875-.3759765625-.1123046875-.5693359375s.03759765625-.3837890625.11083984375-.5673828125c.0751953125-.1865234375.18603515625-.353515625.330078125-.4970703125.14013671875-.140625.30859375-.2509765625.5-.3251953125.18603515625-.072265625.37548828125-.109375.56298828125-.109375l9.43701171875.0087890625c.1865234375,0,.3759765625.037109375.564453125.1103515625.19091796875.07421875.359375.18359375.5009765625.3251953125.29248046875.29296875.44091796875.6533203125.44189453125,1.072265625l.0087890625,9.435546875c.00048828125.1962890625-.03662109375.3896484375-.11083984375.5732421875-.07470703125.185546875-.185546875.353515625-.32958984375.498046875-.1494140625.1484375-.318359375.2607421875-.50244140625.3330078125-.1826171875.0712890625-.37158203125.107421875-.56201171875.107421875-.19775390625-.0009765625-.3896484375-.041015625-.572265625-.1181640625-.181640625-.078125-.34716796875-.1904296875-.4931640625-.3359375-.138671875-.1396484375-.24755859375-.3017578125-.32421875-.482421875-.07763671875-.1826171875-.1171875-.3759765625-.1181640625-.576171875l-.00537109375-5.794921875-8.4287109375,8.4287109375c-.14697265625.146484375-.31591796875.259765625-.50244140625.3359375-.18505859375.0732421875-.3740234375.1103515625-.5625.1103515625Z" style="fill: url(#Gradiente_sem_nome_67);"/><path d="M4.19970703125,45.3134765625c-.19189453125,0-.38134765625-.0380859375-.5634765625-.11328125-.18408203125-.0732421875-.35302734375-.185546875-.501953125-.333984375-.1484375-.1484375-.2607421875-.318359375-.333984375-.50390625-.0712890625-.1806640625-.10791015625-.3701171875-.10791015625-.5615234375-.00048828125-.1904296875.03564453125-.3798828125.10693359375-.5625.07275390625-.185546875.1845703125-.3544921875.3330078125-.5029296875l8.4306640625-8.4296875-5.80224609375-.0107421875c-.4091796875,0-.767578125-.1513671875-1.064453125-.4482421875-.142578125-.142578125-.25390625-.3095703125-.32958984375-.49609375-.07421875-.18359375-.1123046875-.375-.1123046875-.5693359375,0-.193359375.03759765625-.384765625.111328125-.5673828125.07421875-.1865234375.18505859375-.353515625.32958984375-.4970703125.14013671875-.140625.30859375-.2509765625.5-.3251953125.1865234375-.072265625.3759765625-.109375.56298828125-.109375l9.43701171875.0087890625c.1865234375,0,.3759765625.037109375.564453125.1103515625.19091796875.07421875.359375.18359375.5009765625.3251953125.29296875.29296875.44189453125.654296875.44189453125,1.072265625l.0087890625,9.435546875c.00048828125.1962890625-.03662109375.3896484375-.11083984375.5732421875-.07470703125.185546875-.185546875.353515625-.32958984375.498046875-.14990234375.1484375-.31884765625.2607421875-.5029296875.3330078125-.18212890625.0712890625-.37109375.107421875-.5615234375.107421875-.19775390625-.0009765625-.3896484375-.041015625-.572265625-.1181640625-.181640625-.078125-.34716796875-.1904296875-.4931640625-.3359375-.138671875-.1396484375-.24755859375-.3017578125-.32421875-.482421875-.078125-.1826171875-.11767578125-.376953125-.11767578125-.5771484375l-.005859375-5.7939453125-8.4287109375,8.4287109375c-.1474609375.1474609375-.31640625.259765625-.5029296875.3359375-.1845703125.0732421875-.37353515625.1103515625-.56201171875.1103515625Z" style="fill: url(#Gradiente_sem_nome_79);"/></svg>)SVG";
+static constexpr char kShortcutSvgLight64[] =
+    R"SVG(<svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><linearGradient id="Gradiente_sem_nome_67" x1="6.327525932087156" y1="25.731821991599645" x2="10.003657840150883" y2="39.243177572426092" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".100000001490116"/></linearGradient><linearGradient id="Gradiente_sem_nome_79" x1="16.251368970464682" y1="31.86959070458397" x2="3.061002124805869" y2="44.770378792207502" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#62acef"/><stop offset="1" stop-color="#3789ce"/></linearGradient></defs><g><rect x=".4951171875" y="29.0908203125" width="18.41357421875" height="18.4140625" rx="1.09814453125" ry="1.09814453125" style="fill: #eee; opacity: .95;"/><path d="M17.810600280761719,29.586139678955078c.332639694213867,0,.603260040283203.270620346069336.603260040283203.603260040283203v16.217340230941772c0,.332640051841736-.270620346069336.603259980678558-.603260040283203.603259980678558H1.593260049819946c-.332640051841736,0-.603259980678558-.270619928836823-.603259980678558-.603259980678558v-16.217340230941772c0-.332639694213867.270619928836823-.603260040283203.603259980678558-.603260040283203h16.217340230941772ZM17.810600280761719,28.596139907836914H1.593260049819946C.713330030441284,28.596139907836914.000000046081368,29.309469223022461.000000046081368,30.189399719238281v16.217340230941772C.000000046081368,47.286669969558716.713330030441284,47.999999953917722,1.593260049819946,47.999999953917722h16.217340230941772c.87993049621582,0,1.593259811401367-.713329984359007,1.593259811401367-1.593260003737669v-16.217340230941772c0-.87993049621582-.713329315185547-1.593259811401367-1.593259811401367-1.593259811401367h0Z" style="fill: #e5e5e5;"/></g><path d="M4.39404296875,45.8525390625c-.19189453125,0-.38134765625-.0380859375-.5634765625-.11328125-.18408203125-.0732421875-.35302734375-.185546875-.501953125-.333984375-.1484375-.1484375-.2607421875-.318359375-.333984375-.50390625-.0712890625-.1787109375-.107421875-.3681640625-.1083984375-.560546875,0-.1943359375.0361328125-.3828125.107421875-.5634765625.07275390625-.185546875.1845703125-.3544921875.3330078125-.5029296875l8.4306640625-8.4296875-5.80224609375-.0107421875c-.4091796875,0-.767578125-.1513671875-1.064453125-.4482421875-.1416015625-.140625-.2529296875-.307617)SVG"
+    R"SVG(1875-.32958984375-.49609375-.07470703125-.1845703125-.1123046875-.3759765625-.1123046875-.5693359375s.03759765625-.3837890625.11083984375-.5673828125c.0751953125-.1865234375.18603515625-.353515625.330078125-.4970703125.14013671875-.140625.30859375-.2509765625.5-.3251953125.18603515625-.072265625.37548828125-.109375.56298828125-.109375l9.43701171875.0087890625c.1865234375,0,.3759765625.037109375.564453125.1103515625.19091796875.07421875.359375.18359375.5009765625.3251953125.29248046875.29296875.44091796875.6533203125.44189453125,1.072265625l.0087890625,9.435546875c.00048828125.1962890625-.03662109375.3896484375-.11083984375.5732421875-.07470703125.185546875-.185546875.353515625-.32958984375.498046875-.1494140625.1484375-.318359375.2607421875-.50244140625.3330078125-.1826171875.0712890625-.37158203125.107421875-.56201171875.107421875-.19775390625-.0009765625-.3896484375-.041015625-.572265625-.1181640625-.181640625-.078125-.34716796875-.1904296875-.4931640625-.3359375-.138671875-.1396484375-.24755859375-.3017578125-.32421875-.482421875-.07763671875-.1826171875-.1171875-.3759765625-.1181640625-.576171875l-.00537109375-5.794921875-8.4287109375,8.4287109375c-.14697265625.146484375-.31591796875.259765625-.50244140625.3359375-.18505859375.0732421875-.3740234375.1103515625-.5625.1103515625Z" style="fill: url(#Gradiente_sem_nome_67);"/><path d="M4.19970703125,45.3134765625c-.19189453125,0-.38134765625-.0380859375-.5634765625-.11328125-.18408203125-.0732421875-.35302734375-.185546875-.501953125-.333984375-.1484375-.1484375-.2607421875-.318359375-.333984375-.50390625-.0712890625-.1806640625-.10791015625-.3701171875-.10791015625-.5615234375-.00048828125-.1904296875.03564453125-.3798828125.10693359375-.5625.07275390625-.185546875.1845703125-.3544921875.3330078125-.5029296875l8.4306640625-8.4296875-5.80224609375-.0107421875c-.4091796875,0-.767578125-.1513671875-1.064453125-.4482421875-.142578125-.142578125-.25390625-.3095703125-.32958984375-.49609375-.07421875-.18359375-.1123046875-.375-.1123046875-.5693359375,0-.193359375.03759765625-.384765625.111328125-.5673828125.07421875-.1865234375.18505859375-.353515625.32958984375-.4970703125.14013671875-.140625.30859375-.2509765625.5-.3251953125.1865234375-.072265625.3759765625-.109375.56298828125-.109375l9.43701171875.0087890625c.1865234375,0,.3759765625.037109375.564453125.1103515625.19091796875.07421875.359375.18359375.50097656)SVG"
+    R"SVG(25.3251953125.29296875.29296875.44189453125.654296875.44189453125,1.072265625l.0087890625,9.435546875c.00048828125.1962890625-.03662109375.3896484375-.11083984375.5732421875-.07470703125.185546875-.185546875.353515625-.32958984375.498046875-.14990234375.1484375-.31884765625.2607421875-.5029296875.3330078125-.18212890625.0712890625-.37109375.107421875-.5615234375.107421875-.19775390625-.0009765625-.3896484375-.041015625-.572265625-.1181640625-.181640625-.078125-.34716796875-.1904296875-.4931640625-.3359375-.138671875-.1396484375-.24755859375-.3017578125-.32421875-.482421875-.078125-.1826171875-.11767578125-.376953125-.11767578125-.5771484375l-.005859375-5.7939453125-8.4287109375,8.4287109375c-.1474609375.1474609375-.31640625.259765625-.5029296875.3359375-.1845703125.0732421875-.37353515625.1103515625-.56201171875.1103515625Z" style="fill: url(#Gradiente_sem_nome_79);"/></svg>)SVG";
 
 
 
@@ -70422,6 +73291,10 @@ BOOL Wh_ModInit()
                        GetModuleHandleW(L"Microsoft.UI.Xaml.dll") != nullptr);
 
     LoadSettings();
+    // PR #6183 review 6156182247: keep the installer profile out of noninteractive hosts.
+    if (!InstallerUiMayInitialize())
+        return FALSE;
+    g_nativeUiFontSyncMessage = RegisterWindowMessageW(L"Windhawk.Modernizer.NativeUiFont.Sync");
     g_roundedSelectionHighContrast.store(
         SysHighContrastEnabled(), std::memory_order_release);
     g_listRenameHighContrast.store(
@@ -70538,6 +73411,12 @@ BOOL Wh_ModInit()
     // UWP/WinUI apps don't use Win32 theming for their controls, but their
     // context menus are still classic #32768 popups. Install only the hooks
     // needed for acrylic menus, then return.
+    // Shared native opening boundaries remain installed while inactive, so
+    // live off-to-on settings changes also cover menu-only XAML hosts.
+    WindhawkUtils::SetFunctionHook(ShowWindow,OpeningShowWindow_hook,&OpeningShowWindow_orig);
+    WindhawkUtils::SetFunctionHook(ShowWindowAsync,OpeningShowWindowAsync_hook,&OpeningShowWindowAsync_orig);
+    WindhawkUtils::SetFunctionHook(SetWindowPos,OpeningSetWindowPos_hook,&OpeningSetWindowPos_orig);
+    WindhawkUtils::SetFunctionHook(AnimateWindow,OpeningAnimateWindow_hook,&OpeningAnimateWindow_orig);
     if (g_isXamlProcess) {
         // Set dark mode flag so GetSysColor_hook returns dark colors
         RecomputeCustomDarkModeActive();
@@ -70626,8 +73505,16 @@ BOOL Wh_ModInit()
         // hooks above succeeded. Hooks registered during Wh_ModInit are
         // applied by Windhawk when this callback returns.
         MenuEnsureImmersiveHooks(false);
-        // Per-thread hook for existing threads
-        if (g_settings.ModernContextMenus)
+        // Only this branch queues the minimal creation hook. The full
+        // creation hook below is mutually exclusive after this early return.
+        HMODULE openingNtUser=GetModuleHandleW(L"win32u.dll");
+        auto openingCreate=openingNtUser ? reinterpret_cast<NtUserCreateWindowEx_t>(
+            GetProcAddress(openingNtUser,"NtUserCreateWindowEx")) : nullptr;
+        if(!openingCreate || !WindhawkUtils::SetFunctionHook(openingCreate,
+                OpeningNtUserCreateWindowEx_hook,&NtUserCreateWindowEx_orig))
+            Wh_Log(L"Opening animation control: XAML native creation hook unavailable");
+        // Existing UI threads are also covered when menus are disabled.
+        if (g_settings.ModernContextMenus || g_settings.DisableWindowOpeningAnimations)
             EnumWindows(MenuInitEnumProc, 0);
         return TRUE;
     }
@@ -70751,8 +73638,19 @@ BOOL Wh_ModInit()
         Wh_Log(L"Failed to hook SetBkColor");
         return FALSE;
     }
+    if (g_settings.InstallerUi && !WindhawkUtils::SetFunctionHook(SetTextColor,
+            InstallerSetTextColor_hook, &InstallerSetTextColor_orig)) {
+        Wh_Log(L"Failed to hook installer checklist text colors");
+        return FALSE;
+    }
     WindhawkUtils::SetFunctionHook(SetWindowTheme,
         SetWindowTheme_hook, &SetWindowTheme_orig);
+    if (!WindhawkUtils::SetFunctionHook(DrawStateW,
+            DrawStateW_hook, &DrawStateW_orig))
+        Wh_Log(L"Disabled Static flat text: DrawStateW hook unavailable");
+    if(!WindhawkUtils::SetFunctionHook(SetLayeredWindowAttributes,
+            DialogPresentationSetAlpha_hook,&DialogPresentationSetAlpha_orig))
+        Wh_Log(L"Dialog presentation: opacity hook unavailable; keeping native behavior");
     WindhawkUtils::SetFunctionHook(DrawTextW,
         DrawTextW_hook, &DrawTextW_orig);
     if (g_settings.ShellTextDirectWrite && IsCurrentProcessExplorer()) {
@@ -70931,9 +73829,10 @@ BOOL Wh_ModInit()
     // their threads never get the WH_CBT hook. EnumWindows at init
     // ensures every thread with a top-level window gets the hook right away.
     MenuEnsureImmersiveHooks(false);
-    if (g_settings.ModernContextMenus || g_settings.RoundedButtons)
+    if (g_settings.ModernContextMenus || g_settings.RoundedButtons || g_settings.DisableWindowOpeningAnimations || ConsistentCaptionTrackingEnabled())
         EnumWindows(MenuInitEnumProc, 0);
 
+    NativeUiFontRefresh();
     if (g_settings.ShellTextDirectWrite) {
         EnumWindows(ExplorerDialogTextApplyTop, 0);
         EnumWindows(ExplorerTextInvalidateTop, 0);
@@ -70956,6 +73855,13 @@ static BOOL CALLBACK NavMetricsRestoreEnumProc(HWND hwnd, LPARAM);
 
 void Wh_ModBeforeUninit()
 {
+    // Close creation-time style ownership before Windhawk removes its hooks;
+    // restoration later sees only records accepted before this boundary.
+    MmcStyleStripBeginUnload();
+    DialogPresentationsRestoreAll(true);
+    g_installerAdapterUnloading.store(true, std::memory_order_release);
+    g_nativeUiFontUnloading.store(true, std::memory_order_release);
+    NativeUiFontRefresh(true);
     ShellCheckAnim::BeforeUninit();
     DesktopCheckbox::BeforeUninit();
     NavMetricsTransparentList::BeforeUninit();
@@ -70986,6 +73892,7 @@ void Wh_ModBeforeUninit()
     g_winverUnloading.store(true, std::memory_order_release);
     g_singleLinePropertyTabsUnloading.store(true, std::memory_order_release);
     g_tabFeaturesUnloading.store(true, std::memory_order_release);
+    g_mmcNativeFramesUnloading.store(true, std::memory_order_release);
     g_defViewBorderUnloading.store(true, std::memory_order_release);
     // Stop Winver's HWND timer before Windhawk begins draining hooks. Any
     // already-queued start/timer message also sees g_winverUnloading above.
@@ -71004,6 +73911,9 @@ void Wh_ModBeforeUninit()
 
 void Wh_ModUninit()
 {
+    DialogPresentationsRestoreAll(true);
+    OpeningTransitionsRestoreAll(true);
+    InstallerAdapterUninit();
     ThemeEngineWatchStop();
     // Set first: lets ThemeMsgWndProc's kNavDividerApplyHooksMessage handler
     // skip Wh_ApplyHookOperations if a divider paint posted it moments ago
@@ -71024,6 +73934,8 @@ void Wh_ModUninit()
     g_hdrDarkUnloading.store(true, std::memory_order_release);
     GlyphBgBeginUnload();
     g_darkModeUnloading.store(true, std::memory_order_release);
+    EnumWindows(ConsistentCaptionRestoreEnum, 0);
+    ConsistentCaptionsRestoreAll();
     // Set before ShortcutOverlayUninit() below, same reasoning as
     // g_navDividerUnloading above: a kShortcutOverlayActivateMessage posted
     // moments ago could otherwise still dispatch and re-activate on
@@ -71055,6 +73967,7 @@ void Wh_ModUninit()
     DiskPieAnimationCleanupAll();
     LazyFeatureReleaseModules();
     MenuReleaseImmersiveHookModules();
+    NativeUiFontRelease();
     g_winUiTabFontCache.Clear();
     g_groupHeaderFontCache.Clear();
     WinUiTextDWriteCacheClear();
@@ -71208,7 +74121,8 @@ void Wh_ModUninit()
     AuxiliarySubclassCleanup();
     TreeDoubleBufferRemoveAll();
     ToolbarDoubleBufferRemoveAll();
-    MmcStyleStripRemoveAll();
+    MmcNativeFramesRemoveAll(true);
+    MmcStyleStripRemoveAll(true);
 
     // Remove all treeview insertion-mark subclasses
     EnumWindows(EnumWindowsRemoveSubclasses, 0);
@@ -71352,7 +74266,20 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload)
         g_darkModeActive.load(std::memory_order_acquire);
     const bool tooltipTextWasEnabled = TooltipTextIsEnabled();
     const Settings oldSettings = LoadSettings();
+    if(oldSettings.DisableWindowOpeningAnimations && !g_settings.DisableWindowOpeningAnimations){
+        DialogPresentationsRestoreAll(false);
+        OpeningTransitionsRestoreAll(false);
+    }
+    if(!oldSettings.DisableWindowOpeningAnimations && g_settings.DisableWindowOpeningAnimations){
+        EnumWindows(MenuInitEnumProc,0);
+        InstallCbtHookForThread();
+    }
     *bReload = FALSE;
+    if (oldSettings.InstallerUi != GetSettings()->InstallerUi ||
+        oldSettings.InstallerUiProcessTarget != GetSettings()->InstallerUiProcessTarget) {
+        *bReload = TRUE;
+        return TRUE;
+    }
     const bool tooltipTextEnabled = TooltipTextIsEnabled();
     const bool roundedHighContrast = SysHighContrastEnabled();
     g_roundedSelectionHighContrast.store(
@@ -71364,6 +74291,7 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload)
     const bool darkPolicyChanged =
         wasDarkModeActive != nowDarkModeActive ||
         oldSettings.EnableDarkMode != g_settings.EnableDarkMode;
+    if (!DialogPresentationEnabled())DialogPresentationsRestoreAll(false);
     if (!g_isXamlProcess) {
         LazyFeatureEnsureHooks(true);
     }
@@ -71685,6 +74613,7 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload)
         EnumWindows(ExplorerDialogTextApplyTop, 0);
         EnumWindows(ExplorerTextInvalidateTop, 0);
     }
+    NativeUiFontRefresh();
     if (oldSettings.RoundedButtons != g_settings.RoundedButtons)
         EnumWindows(ModernComboTextApplyTop, 0);
     if (IsCurrentProcessExplorer() &&
@@ -71712,7 +74641,7 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload)
     // are off, matching InstallCbtHookForThread's guard.
     if (!g_settings.RoundedButtons) {
         CheckAnims_Cleanup();
-        if (!g_settings.ModernContextMenus)
+        if (!g_settings.ModernContextMenus && !g_settings.DisableWindowOpeningAnimations)
             InitCbtHooks_Cleanup();
     } else if (!oldSettings.RoundedButtons) {
         EnumWindows(MenuInitEnumProc, 0);
@@ -71745,6 +74674,7 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload)
             GlyphEnsureMap();
     }
     EnumWindows(TreeRuntimeApplyEnum, 0);
+    if(IsCurrentProcessMMC()){MmcNativeFramesRemoveAll(false);EnumWindows(MmcNativeFrameApplyTop,0);}
 
     // Pin lists are separate image-list owners and must be rebuilt after the
     // glyph map/runtime TreeView state has been updated.
@@ -71759,9 +74689,25 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload)
     return TRUE;
 }
 
-// Wh_ModAfterInit: scan existing windows for regedit late-attach.
+// Open property sheets survive a build reload. Creation hooks cannot revisit
+// their roots/pages, so restore their dark-mode subclasses after hooks go live.
+// Limit the catch-up pass to this process's native dialogs; Explorer's main
+// Cabinet windows and unrelated application surfaces keep their own theming.
+static BOOL CALLBACK DarkDialogAfterInitEnum(HWND hwnd, LPARAM)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid == GetCurrentProcessId() && IsClassName(hwnd, L"#32770") &&
+        IsCustomDarkModeAllowed())
+        ModeSwitchEnumProc(hwnd, 0);
+    return TRUE;
+}
+
+// Wh_ModAfterInit: catch existing native dialogs and Regedit on late attach.
 void Wh_ModAfterInit()
 {
+    if(g_settings.DisableWindowOpeningAnimations || ConsistentCaptionTrackingEnabled())InstallCbtHookForThread();
+    EnumWindows(InstallerAdapterInstallRoot, 0);
     // All included processes need to follow live app-theme changes, not only
     // explorer.exe. A dedicated thread owns its hidden receiver and message
     // loop. Started here (not Wh_ModInit) so it's only ever created once
@@ -71792,11 +74738,16 @@ void Wh_ModAfterInit()
     StatusWidth::MarkHooksLive();
     DirectUiEnsureSymbolsForLoadedModule(true);
     LazyFeatureEnsureHooks(true);
+    // Theme changes can enqueue work on g_msgWnd and enter shell renderers;
+    // catch existing dialogs only after that receiver and those hooks exist.
+    if (IsCustomDarkModeAllowed())
+        EnumWindows(DarkDialogAfterInitEnum, 0);
 
     ShortcutOverlayEnableForCurrentProcess();
 
     if (!g_isXamlProcess)
         EnumWindows(TreeRuntimeApplyEnum, 0);
+    if(IsCurrentProcessMMC()){MmcNativeFramesRemoveAll(false);EnumWindows(MmcNativeFrameApplyTop,0);}
     if (!g_isXamlProcess)
         EnumWindows(ScrollBarOwnerInstallEnum, 0);
     if (g_settings.SingleLinePropertyTabs)
