@@ -33,7 +33,7 @@ The font and installer options are under **General** and default off. Fonts use 
 
 ### App exclusions and troubleshooting
 
-Open this mod's **Advanced** tab and edit **Custom process exclusion list** to add executable names or paths, such as `example.exe`. Windhawk applies these exclusions before loading the mod. They use the same mechanism as the mod's default exclusions, so there is no second list with different behavior.
+Open this mod's **Advanced** tab and edit **Custom process exclusion list** to add executable names or paths, such as `example.exe`. Enter **one executable name or path per line**, without commas. A comma-separated pair is treated as one entry and will not exclude either application. Windhawk applies these exclusions before loading the mod. They use the same mechanism as the mod's default exclusions, so there is no second list with different behavior.
 
 This draft excludes `mmc.exe` (Computer Management, Disk Management and Device Manager) and `nvcplui.exe` (NVIDIA Control Panel) by default. MMC had launch failures during testing, and both applications still have incomplete theming. Exclusion avoids applying this mod to those processes; it does not claim to repair them. The existing `dwm.exe` exclusion is retained.
 
