@@ -1,5 +1,10 @@
 [
   {
+    "name": ".gitattributes",
+    "sha256": "ae339cdf237de9ecd46b1e2ccb2d4ab54615e0ae88186dea687b61e3a38f83e3",
+    "bytes": 80
+  },
+  {
     "name": ".gitignore",
     "sha256": "6cf68f361ed9af9c89f8304b81604d87347c3d38348e90f1e5bef55ea8fa99a5",
     "bytes": 26
